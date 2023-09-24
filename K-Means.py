@@ -90,7 +90,7 @@
       # data. Once the DNN is trained, we extract the embeddings from the last hidden layer to calculate
       # similarity.
       
-      # Autoencoder is simplest choice to fenerate embeddings. 
+      # Autoencoder is simplest choice to generate embeddings. 
       # Autoencoder is not optimal choice when certain features could be more important than others in determining similarity.
       # Assume age is more important than bmi for stroke prediction. In such cases, use only
       # the important feature as the training label for the DNN. Since this DNN predicts a specific
@@ -127,7 +127,7 @@
     
     # Generating Embeddings:
     
-      # Imagine we have a housing dataset: PRice, Size, Postal Code, Number of Bedrooms, Type of House, Garage, Colors
+      # Imagine we have a housing dataset: Price, Size, Postal Code, Number of Bedrooms, Type of House, Garage, Colors
       
       # Now Pre process the data
         # Price - Poisson Distribution - Quantize and scale to [0,1]
@@ -199,9 +199,11 @@
 
 import os
 import pandas as pd
+import numpy as np
 os.chdir("C:/Users/kkhar/OneDrive/Desktop/K-Means-Clustering")
 
 pd.set_option("display.max_columns", None)
+pd.set_option("display.max_rows", None)
 
 xls = pd.ExcelFile("retail.xlsx")
 sheet_names = xls.sheet_names
@@ -212,10 +214,8 @@ print("Number of Sheets:", num_sheets)
 data1 = pd.read_excel("retail.xlsx", sheet_name = 0)
 data2 = pd.read_excel("retail.xlsx", sheet_name = 1)
 
-data1.describe()
 data1.columns
 data2.columns
-data2.describe()
 
 data1.info()
 data2.info()
@@ -227,58 +227,205 @@ null_rows = stacked_df[null_mask]
 print(null_rows)
 
 stacked = stacked_df.dropna(subset = ['Customer ID'])
-stacked_df.isnull().sum()
+stacked.isnull().sum()
 
-stacked_df[stacked_df['Quantity'] < 0]
+# Removing duplicate entries from a table
+import pandasql as psql
 
-stacked_df[stacked_df['StockCode'] == 20979]
-stacked_df[stacked_df['Invoice'] == '581569']
+query = """
+    SELECT Invoice, StockCode, Description, Quantity, InvoiceDate, Price, [Customer ID], Country
+    FROM stacked
+    GROUP BY Invoice, StockCode, Description, Quantity, InvoiceDate, Price, [Customer ID], Country
+"""
+stacked = psql.sqldf(query)
 
-x = stacked['Invoice'].str.startswith('C')
+def starts_with_letter(string):
+  string = str(string)
+  return string[0].isalpha()
 
+stacked = stacked[~stacked['Invoice'].apply(starts_with_letter)]
+stacked.describe()
 
+stacked = stacked[~(stacked['Price'] < 0)]
 
-
-
-final_data = stacked_df.dropna(subset = ['Customer ID'])
-final_data.isnull().sum()
-
-numeric_columns = final_data.select_dtypes(include=['number'])
+numeric_columns = stacked.select_dtypes(include=['number'])
 negative_mask = numeric_columns < 0
 
 negative_mask.any()
-final_data[final_data['Quantity'] < 0]
+stacked = stacked[~(stacked['Quantity'] < 0)]
+stacked.columns.to_list()
 
-final_data.columns.to_list()
-
-
-
-null_mask = final_data.isnull().any(axis = 1)
-final_data.isnull().any(axis = 1)
-null_rows = final_data[null_mask]
-print(null_rows)
-final_data[final_data['Customer ID'] ==  ]
-# Returns Handling
 
 
 # RFM Analysis of Customers 
 
 # Recency: If a customer made a purchase within last 3 months then we 
 # call them recent customers
-final_data.head(n=2)
+stacked.head(n=2)
 
-final_data['InvoiceDate'].max()
-final_data['InvoiceDate'].min()
+final_data = stacked.copy()
+final_data.describe()
 
-final_data.groupby('Customer ID')['InvoiceDate'].max()
-
-(final_data['InvoiceDate'].max() - final_data.groupby('Customer ID')['InvoiceDate'].max()).dt.days
+dataset_max = final_data['InvoiceDate'].max()
+dataset_max = pd.to_datetime(dataset_max)  
+customer_max = final_data.groupby('Customer ID', as_index = False)['InvoiceDate'].max()
+customer_max.columns = ['Customer ID', 'Latest_Invoice_Date']
+customer_max['Latest_Invoice_Date'] = pd.to_datetime(customer_max['Latest_Invoice_Date'])
+customer_max['Recency'] = customer_max.Latest_Invoice_Date.apply(lambda x: (dataset_max - x).days) 
+customer_max = customer_max.drop(['Latest_Invoice_Date'], axis = 1)
 
 # Frequency, How Frequent Customers are making purchases
-final_data.groupby('Customer ID')['Invoice'].nunique()
+Invoice_Count = final_data.groupby(['Customer ID'], as_index = False).agg({'Invoice' : lambda x:len(x)})
+Invoice_Count.columns = ['Customer ID', 'Frequency']
 
-# Monetary Value
+# Monetary, How much did Customers Spend
 final_data['Sales'] = final_data['Price']*final_data['Quantity']
+Total_Sales = final_data.groupby('Customer ID')['Sales'].sum().reset_index()
+Total_Sales.columns = ['Customer ID', 'Monetary']
+Total_Sales = Total_Sales.reset_index(drop = True)
+customer_max = customer_max.reset_index(drop = True)
+Invoice_Count = Invoice_Count.reset_index(drop = True)
+merge1 = pd.merge(customer_max, Invoice_Count, on = 'Customer ID')
+df = pd.merge(merge1, Total_Sales, on = 'Customer ID')
+df.head(n=2)
+
+Total_Sales[Total_Sales['Customer ID']==18102]
 
 
+def calculate_rfm_scores(dataframe, r_col, f_col, m_col):
+  #dataframe.sort_values(by=[r_col, f_col, m_col], inplace=True)  # Sort the DataFrame by columns
+  r_quantiles = dataframe[r_col].quantile([0.2, 0.4, 0.6, 0.8])
+  f_quantiles = dataframe[f_col].quantile([0.2, 0.4, 0.6, 0.8])
+  m_quantiles = dataframe[m_col].quantile([0.2, 0.4, 0.6, 0.8])
+
+  def R_score(recency):
+    if recency <= r_quantiles.iloc[0]:
+      return 5
+    elif recency > r_quantiles.iloc[0] and recency <= r_quantiles.iloc[1]:
+      return 4
+    elif recency > r_quantiles.iloc[1] and recency <= r_quantiles.iloc[2]:
+      return 3
+    elif recency > r_quantiles.iloc[2] and recency <= r_quantiles.iloc[3]:
+      return 2
+    else:
+      return 1
+
+  def F_score(frequency):
+    if frequency <= f_quantiles.iloc[0]:
+      return 5
+    elif frequency > f_quantiles.iloc[0] and frequency <= f_quantiles.iloc[1]:
+      return 4
+    elif frequency > f_quantiles.iloc[1] and frequency <= f_quantiles.iloc[2]:
+      return 3
+    elif frequency > f_quantiles.iloc[2] and frequency <= f_quantiles.iloc[3]:
+      return 2
+    else:
+      return 1
+
+  def M_score(monetary):
+    if monetary <= m_quantiles.iloc[0]:
+      return 5
+    elif monetary > m_quantiles.iloc[0] and monetary <= m_quantiles.iloc[1]:
+      return 4
+    elif monetary > m_quantiles.iloc[1] and monetary <= m_quantiles.iloc[2]:
+      return 3
+    elif monetary > m_quantiles.iloc[2] and monetary <= m_quantiles.iloc[3]:
+      return 2
+    else:
+      return 1
+
+  dataframe['R'] = dataframe[r_col].apply(R_score)
+  dataframe['F'] = dataframe[f_col].apply(F_score)
+  dataframe['M'] = dataframe[m_col].apply(M_score)
+
+  return dataframe[['R', 'F', 'M']]
+
+rfm_scores = calculate_rfm_scores(df, 'Recency', 'Frequency', 'Monetary')
+df.head(n=2)    
+
+#df.tail()
+#df[df['Customer ID'] == 18286]
+#18286, #18287
+# 1,4,2 and 4,2,1
+
+#Customer ID Recency Frequency Monetary R F M Country
+
+# do not merge, need to process Country in Lat Long - exclude for now
+
+df['RFM'] = df['R'].astype(str)+df['F'].astype(str) + df['M'].astype(str)
+df.head(n=2)
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+sns.displot(df['Recency'])
+plt.show()
+
+sns.displot(df['Frequency'])
+plt.show()
+
+sns.displot(df['Monetary'])
+plt.show()
+
+
+sns.displot(np.log(df['Recency']))
+plt.show()
+
+sns.displot(np.log(df['Frequency']))
+plt.show()
+
+sns.displot(np.log(df['Monetary']+1))
+plt.show()
+
+df['Frequency'].describe()
+df['Recency'].describe()
+df['Monetary'].describe()
+
+# Monetary Log Transfrom and scale to 0 and 1
+
+df['log_M'] = np.log(df['Monetary']+1)
+
+sns.displot((df['log_M']))
+plt.show()
+
+# x_scaled = x - x_min/x_max - x_min
+def minMaxScaler(numArr):
+  minx = np.min(numArr)
+  maxx = np.max(numArr)
+  numArr = (numArr - minx) / (maxx - minx)
+  return numArr
+
+
+df['scaled_Monetary'] = minMaxScaler(df['log_M'])
+
+sns.displot(df['scaled_Monetary'])
+plt.show()
+
+df.info()
+
+
+
+df['log_F'] = np.log(df['Frequency']+1)
+sns.displot(df['log_F'])
+plt.show()
+
+
+df['scaled_Frequency'] = minMaxScaler(df['log_F'])
+sns.displot(df['scaled_Frequency'])
+plt.show()
+
+
+df['log_R'] = np.log(df['Recency']+1)
+
+
+
+df['scaled_Recency'] = minMaxScaler(df['log_R'])
+sns.displot(df['scaled_Recency'])
+plt.show()
+
+df['scaled_Customer'] = minMaxScaler(df['Customer ID'])
+df.head(n=2)
+
+df['scaled_RFM'] = minMaxScaler(df['RFM'].astype(int))
+sns.displot(df['scaled_RFM'])
+plt.show()
 
