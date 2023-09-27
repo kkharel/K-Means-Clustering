@@ -312,15 +312,15 @@ def calculate_rfm_scores(dataframe, r_col, f_col, m_col):
 
   def F_score(frequency):
     if frequency <= f_quantiles.iloc[0]:
-      return 1
+      return 5
     elif frequency > f_quantiles.iloc[0] and frequency <= f_quantiles.iloc[1]:
-      return 2
+      return 4
     elif frequency > f_quantiles.iloc[1] and frequency <= f_quantiles.iloc[2]:
       return 3
     elif frequency > f_quantiles.iloc[2] and frequency <= f_quantiles.iloc[3]:
-      return 4
+      return 2
     else:
-      return 5
+      return 1
 
   def M_score(monetary):
     if monetary <= m_quantiles.iloc[0]:
