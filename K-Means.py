@@ -388,11 +388,11 @@ sns.displot((df['log_M']))
 plt.show()
 
 # x_scaled = x - x_min/x_max - x_min
-def minMaxScaler(numArr):
-  minx = np.min(numArr)
-  maxx = np.max(numArr)
-  numArr = (numArr - minx) / (maxx - minx)
-  return numArr
+def minMaxScaler(numcol):
+  minx = np.min(numcol)
+  maxx = np.max(numcol)
+  numcol = (numcol - minx) / (maxx - minx)
+  return numcol
 
 
 df['scaled_Monetary'] = minMaxScaler(df['log_M'])
@@ -747,8 +747,3 @@ for ik in range(k): # loop over customer ID that is initialized as centroid
     centroid_distances[u] = total_distance
     
   distance[f'Centroid{ik}distance'] = centroid_distances
-
-# k = 12345 this is a centroid
-# values_of_k_centroid = [1,2,3,4,5] these are centroid data points
-# features_of_other_customer_id [ 3,4,5,3,1]
-# So for each k, for each values of k, for each feature of other customer, calculate distance
