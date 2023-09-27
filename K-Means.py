@@ -300,27 +300,27 @@ def calculate_rfm_scores(dataframe, r_col, f_col, m_col):
 
   def R_score(recency):
     if recency <= r_quantiles.iloc[0]:
-      return 5
+      return 1
     elif recency > r_quantiles.iloc[0] and recency <= r_quantiles.iloc[1]:
-      return 4
+      return 2
     elif recency > r_quantiles.iloc[1] and recency <= r_quantiles.iloc[2]:
       return 3
     elif recency > r_quantiles.iloc[2] and recency <= r_quantiles.iloc[3]:
-      return 2
+      return 4
     else:
-      return 1
+      return 5
 
   def F_score(frequency):
     if frequency <= f_quantiles.iloc[0]:
-      return 5
+      return 1
     elif frequency > f_quantiles.iloc[0] and frequency <= f_quantiles.iloc[1]:
-      return 4
+      return 2
     elif frequency > f_quantiles.iloc[1] and frequency <= f_quantiles.iloc[2]:
       return 3
     elif frequency > f_quantiles.iloc[2] and frequency <= f_quantiles.iloc[3]:
-      return 2
+      return 4
     else:
-      return 1
+      return 5
 
   def M_score(monetary):
     if monetary <= m_quantiles.iloc[0]:
@@ -423,8 +423,6 @@ df['scaled_Recency'] = minMaxScaler(df['log_R'])
 sns.displot(df['scaled_Recency'])
 plt.show()
 
-df['scaled_Customer'] = minMaxScaler(df['Customer ID'])
-df.head(n=2)
 
 df['scaled_RFM'] = minMaxScaler(df['RFM'].astype(int))
 sns.displot(df['scaled_RFM'])
@@ -582,6 +580,81 @@ df = pd.get_dummies(df, columns=['label'])
 df[df.columns[df.columns.str.startswith('label_')]] = df[df.columns[df.columns.str.startswith('label_')]].astype(int)
 df.columns.to_list()
 df.head(n=2)
+
+
+
+from scipy.stats import skew
+df.head(n=2)
+
+skew(df['Recency']**(0.32)) # Power transformation
+skew(df['Frequency'])
+skew(df['Monetary'])
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+sns.displot(df['Recency']**(1/3), kde = True)
+plt.show()
+
+sns.displot(np.log(df['Frequency']), kde = True)
+plt.show()
+
+sns.displot(np.log(df['Monetary']), kde = True)
+plt.show()
+
+
+
+import diptest
+
+def bimodal_test(data, feature):
+  dip_statistic, p_value = diptest.diptest(data[feature])
+  alpha = 0.05
+  if p_value < alpha:
+    print(f"Reject the null hypothesis for {feature}: Data is not unimodal (potentially bimodal or multimodal).")
+  else:
+    print(f"Fail to reject the null hypothesis for {feature}: Data appears unimodal.")
+  print(f"Dip Statistic for {feature}: {dip_statistic}")
+  print(f"P-value for {feature}: {p_value}")
+  
+bimodal_test(data = df, feature = 'scaled_Frequency')  
+bimodal_test(data = df, feature = 'scaled_Recency')  
+bimodal_test(data = df, feature = 'scaled_Monetary')  
+
+from sklearn.mixture import GaussianMixture
+gmm = GaussianMixture(n_components=1)  
+gmm.fit((df['scaled_Frequency']).to_numpy().reshape(-1, 1))
+thresholds = gmm.means_
+thresholds = pd.DataFrame(thresholds).squeeze()
+thresholds
+
+df[df['Frequency']==1]
+
+#normality test
+from scipy.stats import anderson, shapiro, kstest
+
+result = anderson(df['Recency']**0.32)
+print('Anderson-Darling Test Statistic:', result.statistic)
+print('Critical Values:', result.critical_values)
+
+stat, p = shapiro(df['Recency']**0.32)
+print('Shapiro-Wilk Test Statistic:', stat)
+print('p-value:', p)
+
+stat, p = kstest(df['Recency']**0.32, 'norm')
+print('Kolmogorov-Smirnov Test Statistic:', stat)
+print('p-value:', p)
+
+
+from sklearn.mixture import GaussianMixture
+gmm = GaussianMixture(n_components=1)  
+gmm.fit((df['Recency']**0.32).to_numpy().reshape(-1, 1))
+thresholds = gmm.means_
+thresholds = pd.DataFrame(thresholds).squeeze()
+thresholds
+
+df['Recency_bimodal'] = ((df['Recency']**0.32) > thresholds.squeeze()).astype(int)
+df.head(n=2)
+
+
 cols = [ 'Customer ID', 'scaled_Monetary', 'scaled_Frequency', 'scaled_Recency', 'label_AboutToSleep', 'label_AtRisk', 'label_CannotLoseThem', 'label_Champions', 'label_Hibernating', 'label_Lost', 'label_LoyalCustomers', 'label_NeedAttention', 'label_PotentialLoyalist', 'label_Promising', 'label_RecentCustomers']
 cluster_data = df[cols].astype(float)
 cluster_data.head()
