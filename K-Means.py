@@ -415,7 +415,8 @@ plt.show()
 
 
 df['log_R'] = np.log(df['Recency']+1)
-
+sns.displot(np.log(df['Recency']+1))
+plt.show()
 
 
 df['scaled_Recency'] = minMaxScaler(df['log_R'])
@@ -429,3 +430,252 @@ df['scaled_RFM'] = minMaxScaler(df['RFM'].astype(int))
 sns.displot(df['scaled_RFM'])
 plt.show()
 
+fig, ax = plt.subplots()
+sns.kdeplot(df['scaled_Recency'], label='Recency', ax=ax)
+sns.kdeplot(df['scaled_Frequency'], label='Frequency', ax=ax)
+sns.kdeplot(df['scaled_Monetary'], label='Monetary', ax=ax)
+ax.legend()
+plt.show()
+
+plt.subplots()
+sns.kdeplot((df['RFM'].astype(int)))
+plt.show()
+
+def rfm_score_to_label(score):
+  rfm_mapping = {
+    555: "Champions",
+    554: "Champions",
+    553: "LoyalCustomers",
+    552: "PotentialLoyalist",
+    551: "PotentialLoyalist",
+    545: "Champions",
+    544: "Champions",
+    543: "LoyalCustomers",
+    542: "PotentialLoyalist",
+    541: "PotentialLoyalist",
+    535: "PotentialLoyalist",
+    534: "PotentialLoyalist",
+    533: "PotentialLoyalist",
+    532: "PotentialLoyalist",
+    531: "PotentialLoyalist",
+    525: "Promising",
+    524: "Promising",
+    523: "Promising",
+    522: "RecentCustomers",
+    521: "RecentCustomers",
+    515: "Promising",
+    514: "Promising",
+    513: "Promising",
+    512: "RecentCustomers",
+    511: "RecentCustomers",
+    455: "Champions",
+    454: "Champions",
+    453: "LoyalCustomers",
+    452: "PotentialLoyalist",
+    451: "PotentialLoyalist",
+    445: "Champions",
+    444: "Champions",
+    443: "LoyalCustomers",
+    442: "PotentialLoyalist",
+    441: "PotentialLoyalist",
+    435: "PotentialLoyalist",
+    434: "PotentialLoyalist",
+    433: "PotentialLoyalist",
+    432: "PotentialLoyalist",
+    431: "PotentialLoyalist",
+    425: "Promising",
+    424: "Promising",
+    423: "Promising",
+    422: "RecentCustomers",
+    421: "RecentCustomers",
+    415: "Promising",
+    414: "Promising",
+    413: "Promising",
+    412: "RecentCustomers",
+    411: "RecentCustomers",
+    355: "LoyalCustomers",
+    354: "LoyalCustomers",
+    353: "PotentialLoyalist",
+    352: "PotentialLoyalist",
+    351: "PotentialLoyalist",
+    345: "LoyalCustomers",
+    344: "LoyalCustomers",
+    343: "NeedAttention",
+    342: "NeedAttention",
+    341: "NeedAttention",
+    335: "NeedAttention",
+    334: "NeedAttention",
+    333: "NeedAttention",
+    332: "NeedAttention",
+    331: "AboutToSleep",
+    325: "NeedAttention",
+    324: "NeedAttention",
+    323: "NeedAttention",
+    322: "AboutToSleep",
+    321: "AboutToSleep",
+    315: "NeedAttention",
+    314: "NeedAttention",
+    313: "AboutToSleep",
+    312: "AboutToSleep",
+    311: "AboutToSleep",
+    255: "AtRisk",
+    254: "AtRisk",
+    253: "AtRisk",
+    252: "AboutToSleep",
+    251: "AboutToSleep",
+    245: "AtRisk",
+    244: "AtRisk",
+    243: "AtRisk",
+    242: "AboutToSleep",
+    241: "AboutToSleep",
+    235: "AtRisk",
+    234: "AtRisk",
+    233: "AtRisk",
+    232: "AboutToSleep",
+    231: "AboutToSleep",
+    225: "AtRisk",
+    224: "AtRisk",
+    223: "Hibernating",
+    222: "Hibernating",
+    221: "AboutToSleep",
+    215: "AtRisk",
+    214: "AtRisk",
+    213: "Hibernating",
+    212: "Hibernating",
+    211: "Hibernating",
+    155: "CannotLoseThem",
+    154: "CannotLoseThem",
+    153: "Hibernating",
+    152: "Hibernating",
+    151: "Lost",
+    145: "CannotLoseThem",
+    144: "CannotLoseThem",
+    143: "Hibernating",
+    142: "Hibernating",
+    141: "Lost",
+    135: "CannotLoseThem",
+    134: "CannotLoseThem",
+    133: "Hibernating",
+    132: "Hibernating",
+    131: "Lost",
+    125: "CannotLoseThem",
+    124: "CannotLoseThem",
+    123: "Hibernating",
+    122: "Lost",
+    121: "Lost",
+    115: "CannotLoseThem",
+    114: "CannotLoseThem",
+    113: "Lost",
+    112: "Lost",
+    111: "Lost",
+  }
+  return rfm_mapping.get(score, "Unknown")
+
+backup = df.copy()
+df = backup
+
+df.head(n=2)
+df['label'] = df['RFM'].astype(int).apply(rfm_score_to_label)
+df['label'].unique()
+
+df = pd.get_dummies(df, columns=['label'])
+df[df.columns[df.columns.str.startswith('label_')]] = df[df.columns[df.columns.str.startswith('label_')]].astype(int)
+df.columns.to_list()
+df.head(n=2)
+cols = [ 'Customer ID', 'scaled_Monetary', 'scaled_Frequency', 'scaled_Recency', 'label_AboutToSleep', 'label_AtRisk', 'label_CannotLoseThem', 'label_Champions', 'label_Hibernating', 'label_Lost', 'label_LoyalCustomers', 'label_NeedAttention', 'label_PotentialLoyalist', 'label_Promising', 'label_RecentCustomers']
+cluster_data = df[cols].astype(float)
+cluster_data.head()
+
+cluster_data_b = cluster_data
+cluster_data = cluster_data_b
+
+cor_df = cluster_data
+correlation_matrix = cor_df.corr()
+plt.figure(figsize = (10,6))
+heatmap = sns.heatmap(correlation_matrix, annot = True, fmt = "0.2f", cmap = "coolwarm_r", annot_kws={"size": 12})
+heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=90, horizontalalignment="right", fontsize = 14)
+heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation = 0, horizontalalignment = "right", fontsize = 14)
+plt.title("Correlation Heatmap of Numerical Features", fontsize = 16)
+plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
+plt.show()
+
+from sklearn.decomposition import PCA
+n_components = 0.95
+pca = PCA(n_components=n_components)
+principal_components = pca.fit_transform(cluster_data)
+
+# Create a DataFrame to store the principal components
+principal_df = pd.DataFrame(data=principal_components)
+principal_df.head(n=2)
+
+explained_variance_ratio = pca.explained_variance_ratio_
+explained_variance_ratio.sum()
+
+correlation_matrix = principal_df.corr()
+plt.figure(figsize = (10,6))
+heatmap = sns.heatmap(correlation_matrix, annot = True, fmt = "0.2f", cmap = "coolwarm_r", annot_kws={"size": 12})
+heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=90, horizontalalignment="right", fontsize = 14)
+heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation = 0, horizontalalignment = "right", fontsize = 14)
+plt.title("Correlation Heatmap of Numerical Features", fontsize = 16)
+plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
+plt.show()
+
+
+principal_df.head(n=2)
+
+cluster_data.head(n=2)
+
+
+
+
+
+
+# final data dictionary
+
+cluster_data_dict = cluster_data.set_index('Customer ID').apply(lambda x: x.values.tolist(), axis=1).to_dict()
+
+first_5_records = {k: cluster_data_dict[k] for k in list(cluster_data_dict)[:5]}
+for key, value in first_5_records.items():
+  print(f'{key}: {value}')
+  
+  
+class Centroid:
+  def __init__(self, location):
+    self.location = location
+    self.closest_users = set()
+    
+import random
+k = 3
+initial_centroids_customers = random.sample(sorted(list(cluster_data_dict.keys())), k) # randomly select k customers as initial centroid
+initial_centroids_customers
+
+centroids = {f'cluster{ik}Centroids': cluster_data_dict[initial_centroids_customers[ik]] for ik in range(k)} # get the feature values of randomly selected customer which is our initial centroid
+centroids
+
+clusters = {f'cluster{ik}CustomerID': [] for ik in range(k)} # initialize empty list to store Customer IDs that gets assigned to each cluster
+clusters
+
+num_features_per_user = 14
+#distance = {f'Centroid{ik}distance': {u: sum([centroids[f'cluster{ik}Centroids'][j] - cluster_data_dict[u][j] for j in range(num_features_per_user)]) for u in cluster_data_dict} for ik in range(k)}
+
+# Calculate the distance from centroid to each datapoint
+distance = {} # Initialize an empty dictionary to store distances
+
+for ik in range(k): # loop over customer ID that is initialized as centroid
+  centroid_distances = {} # Create an empty dictionary to store distances from this customer ID to all other customer ID
+  
+  for u in cluster_data_dict: # loop over all customer ID
+    total_distance = 0 # Initialize the total distance for this customer ID to be zero
+    
+    # calculate the distance or dissimilarity or the difference between each feature of the customer ID and centroid
+    for j in range(num_features_per_user): # Loop over each feature dimension
+      total_distance += centroids[f'cluster{ik}Centroids'][j] - cluster_data_dict[u][j] # Calculate the distance along each feature dimension and add it to tota_distance
+    
+    centroid_distances[u] = total_distance
+    
+  distance[f'Centroid{ik}distance'] = centroid_distances
+
+# k = 12345 this is a centroid
+# values_of_k_centroid = [1,2,3,4,5] these are centroid data points
+# features_of_other_customer_id [ 3,4,5,3,1]
+# So for each k, for each values of k, for each feature of other customer, calculate distance
