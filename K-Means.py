@@ -230,6 +230,7 @@ stacked = stacked_df.dropna(subset = ['Customer ID'])
 stacked.isnull().sum()
 
 # Removing duplicate entries from a table
+
 import pandasql as psql
 
 query = """
@@ -246,7 +247,7 @@ def starts_with_letter(string):
 stacked = stacked[~stacked['Invoice'].apply(starts_with_letter)]
 stacked.describe()
 
-stacked = stacked[~(stacked['Price'] < 0)]
+stacked = stacked[~(stacked['Price'] <= 0)]
 
 numeric_columns = stacked.select_dtypes(include=['number'])
 negative_mask = numeric_columns < 0
@@ -261,6 +262,7 @@ stacked.columns.to_list()
 
 # Recency: If a customer made a purchase within last 3 months then we 
 # call them recent customers
+
 stacked.head(n=2)
 
 final_data = stacked.copy()
@@ -312,15 +314,15 @@ def calculate_rfm_scores(dataframe, r_col, f_col, m_col):
 
   def F_score(frequency):
     if frequency <= f_quantiles.iloc[0]:
-      return 1
+      return 5
     elif frequency > f_quantiles.iloc[0] and frequency <= f_quantiles.iloc[1]:
-      return 2
+      return 4
     elif frequency > f_quantiles.iloc[1] and frequency <= f_quantiles.iloc[2]:
       return 3
     elif frequency > f_quantiles.iloc[2] and frequency <= f_quantiles.iloc[3]:
-      return 4
+      return 2
     else:
-      return 5
+      return 1
 
   def M_score(monetary):
     if monetary <= m_quantiles.iloc[0]:
@@ -357,34 +359,65 @@ df.head(n=2)
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-sns.displot(df['Recency'])
+
+sns.displot(df['Recency']+1)
 plt.show()
 
-sns.displot(df['Frequency'])
+sns.displot(df['Frequency']+1)
+plt.xlim(0,1000)
 plt.show()
 
-sns.displot(df['Monetary'])
+sns.displot(df['Monetary']+1)
+plt.xlim(0,10000)
 plt.show()
 
+# Check the skewness of data
+from scipy.stats import skew
 
-sns.displot(np.log(df['Recency']))
-plt.show()
+skew((df['Recency']+1)**0.32) 
+skew(df['Frequency']+1)
+skew(df['Monetary']+1)
 
-sns.displot(np.log(df['Frequency']))
-plt.show()
+# We can see that Frequency and Monetary is highly skewed to the right. We
+# need to make it look more normal and one  way is to use log transformation in these
+# type of cases. None of the variables are symmetric
 
-sns.displot(np.log(df['Monetary']+1))
-plt.show()
+# Check kurtosis of data
+from scipy.stats import kurtosis
 
-df['Frequency'].describe()
-df['Recency'].describe()
-df['Monetary'].describe()
+kurtosis(df['Recency']+1) 
+kurtosis(df['Frequency']+1)
+kurtosis(df['Monetary']+1)
 
-# Monetary Log Transfrom and scale to 0 and 1
+# The kurtosis value for Recency is negative, indicating that the distribution has
+# lighter tails and is flatter than a normal distribution (platykurtic). This
+# suggests that extreme values are less likely 
+# The kurtosis value for Frequency and Monetary is extremely high, indicating a very
+# heavy tailed distribution(leptokurtic). It suggests that there are extreme values
+# and the distribution of data has a very high peak. Suggests present of outliers
+# or highly skewed distribution.
 
+# The kurtosis for Recency is already quite close to zero suggesting that the
+# distribution is not far from normal distribution
+
+# The k-means algorithm is based on the mean of data points within clusters and its
+# performance can be affected by the distribution of data. K means makes the assumption
+# that clusters are spherical and equally sized, and it tries to minimize the variance
+# within clusters which makes this algorithm sensitive to scaling and shape of the 
+# clusters.
+
+# Hence, we transform and scale the variables
+from scipy.stats import boxcox
+
+df['power_R'] = (df['Recency']+1)**0.32
+df['log_F'] = np.log(df['Frequency']+1)
 df['log_M'] = np.log(df['Monetary']+1)
 
-sns.displot((df['log_M']))
+fig, ax = plt.subplots()
+sns.kdeplot(df['power_R'], label='Power Recency', ax=ax)
+sns.kdeplot(df['log_F'], label='Log Frequency', ax=ax)
+sns.kdeplot(df['log_M'], label='Log Monetary', ax=ax)
+ax.legend()
 plt.show()
 
 # x_scaled = x - x_min/x_max - x_min
@@ -395,49 +428,27 @@ def minMaxScaler(numcol):
   return numcol
 
 
-df['scaled_Monetary'] = minMaxScaler(df['log_M'])
-
-sns.displot(df['scaled_Monetary'])
-plt.show()
-
-df.info()
-
-
-
-df['log_F'] = np.log(df['Frequency']+1)
-sns.displot(df['log_F'])
-plt.show()
-
-
+# Scaling Recency, Frequency and Monetary Values 
+df['scaled_Recency'] = minMaxScaler(df['power_R']) 
 df['scaled_Frequency'] = minMaxScaler(df['log_F'])
-sns.displot(df['scaled_Frequency'])
-plt.show()
-
-
-df['log_R'] = np.log(df['Recency']+1)
-sns.displot(np.log(df['Recency']+1))
-plt.show()
-
-
-df['scaled_Recency'] = minMaxScaler(df['log_R'])
-sns.displot(df['scaled_Recency'])
-plt.show()
-
-
+df['scaled_Monetary']  = minMaxScaler(df['log_M'])
 df['scaled_RFM'] = minMaxScaler(df['RFM'].astype(int))
-sns.displot(df['scaled_RFM'])
-plt.show()
+df['scaled_R'] = minMaxScaler(df['R'])
+df['scaled_F'] = minMaxScaler(df['F'])
+df['scaled_M'] = minMaxScaler(df['M'])
 
-fig, ax = plt.subplots()
-sns.kdeplot(df['scaled_Recency'], label='Recency', ax=ax)
-sns.kdeplot(df['scaled_Frequency'], label='Frequency', ax=ax)
-sns.kdeplot(df['scaled_Monetary'], label='Monetary', ax=ax)
-ax.legend()
-plt.show()
+# I will create a new variable recency_bimodal to represent two distinct peaks in recency variable
 
-plt.subplots()
-sns.kdeplot((df['RFM'].astype(int)))
-plt.show()
+from sklearn.mixture import GaussianMixture
+gmm = GaussianMixture(n_components=1)  
+gmm.fit((df['Recency']**0.32).to_numpy().reshape(-1, 1))
+thresholds = gmm.means_
+thresholds = pd.DataFrame(thresholds).squeeze()
+print(thresholds)
+df['Recency_bimodal'] = ((df['Recency']**0.32) > thresholds.squeeze()).astype(int)
+
+
+# Now I will map the RFM scores to its segments
 
 def rfm_score_to_label(score):
   rfm_mapping = {
@@ -569,181 +580,104 @@ def rfm_score_to_label(score):
   }
   return rfm_mapping.get(score, "Unknown")
 
+
 backup = df.copy()
 df = backup
 
 df.head(n=2)
+
+# Creating a label variable to store all the customer segmentation mappings
 df['label'] = df['RFM'].astype(int).apply(rfm_score_to_label)
 df['label'].unique()
 
+# Converting customer segmentation mappings to dummy variables
 df = pd.get_dummies(df, columns=['label'])
 df[df.columns[df.columns.str.startswith('label_')]] = df[df.columns[df.columns.str.startswith('label_')]].astype(int)
 df.columns.to_list()
 df.head(n=2)
+df['R']
 
-
-
-from scipy.stats import skew
-df.head(n=2)
-
-skew(df['Recency']**(0.32)) # Power transformation
-skew(df['Frequency'])
-skew(df['Monetary'])
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-sns.displot(df['Recency']**(1/3), kde = True)
-plt.show()
-
-sns.displot(np.log(df['Frequency']), kde = True)
-plt.show()
-
-sns.displot(np.log(df['Monetary']), kde = True)
-plt.show()
-
-
-
-import diptest
-
-def bimodal_test(data, feature):
-  dip_statistic, p_value = diptest.diptest(data[feature])
-  alpha = 0.05
-  if p_value < alpha:
-    print(f"Reject the null hypothesis for {feature}: Data is not unimodal (potentially bimodal or multimodal).")
-  else:
-    print(f"Fail to reject the null hypothesis for {feature}: Data appears unimodal.")
-  print(f"Dip Statistic for {feature}: {dip_statistic}")
-  print(f"P-value for {feature}: {p_value}")
-  
-bimodal_test(data = df, feature = 'scaled_Frequency')  
-bimodal_test(data = df, feature = 'scaled_Recency')  
-bimodal_test(data = df, feature = 'scaled_Monetary')  
-
-from sklearn.mixture import GaussianMixture
-gmm = GaussianMixture(n_components=1)  
-gmm.fit((df['scaled_Frequency']).to_numpy().reshape(-1, 1))
-thresholds = gmm.means_
-thresholds = pd.DataFrame(thresholds).squeeze()
-thresholds
-
-df[df['Frequency']==1]
-
-#normality test
-from scipy.stats import anderson, shapiro, kstest
-
-result = anderson(df['Recency']**0.32)
-print('Anderson-Darling Test Statistic:', result.statistic)
-print('Critical Values:', result.critical_values)
-
-stat, p = shapiro(df['Recency']**0.32)
-print('Shapiro-Wilk Test Statistic:', stat)
-print('p-value:', p)
-
-stat, p = kstest(df['Recency']**0.32, 'norm')
-print('Kolmogorov-Smirnov Test Statistic:', stat)
-print('p-value:', p)
-
-
-from sklearn.mixture import GaussianMixture
-gmm = GaussianMixture(n_components=1)  
-gmm.fit((df['Recency']**0.32).to_numpy().reshape(-1, 1))
-thresholds = gmm.means_
-thresholds = pd.DataFrame(thresholds).squeeze()
-thresholds
-
-df['Recency_bimodal'] = ((df['Recency']**0.32) > thresholds.squeeze()).astype(int)
-df.head(n=2)
-
-
-cols = [ 'Customer ID', 'scaled_Monetary', 'scaled_Frequency', 'scaled_Recency', 'label_AboutToSleep', 'label_AtRisk', 'label_CannotLoseThem', 'label_Champions', 'label_Hibernating', 'label_Lost', 'label_LoyalCustomers', 'label_NeedAttention', 'label_PotentialLoyalist', 'label_Promising', 'label_RecentCustomers']
+# Now we will filter the variables that goes into our k-means model
+df.columns.to_list()
+cols = [ 'Customer ID', 'scaled_R', 'scaled_F', 'scaled_M', 'scaled_Monetary', 'scaled_Frequency', 'scaled_Recency', 'Recency_bimodal', 'label_AboutToSleep', 'label_AtRisk', 'label_CannotLoseThem', 'label_Champions', 'label_Hibernating', 'label_Lost', 'label_LoyalCustomers', 'label_NeedAttention', 'label_PotentialLoyalist', 'label_Promising', 'label_RecentCustomers']
 cluster_data = df[cols].astype(float)
 cluster_data.head()
+cluster_data.columns.to_list()
 
-cluster_data_b = cluster_data
-cluster_data = cluster_data_b
 
 cor_df = cluster_data
 correlation_matrix = cor_df.corr()
 plt.figure(figsize = (10,6))
-heatmap = sns.heatmap(correlation_matrix, annot = True, fmt = "0.2f", cmap = "coolwarm_r", annot_kws={"size": 12})
-heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=90, horizontalalignment="right", fontsize = 14)
-heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation = 0, horizontalalignment = "right", fontsize = 14)
-plt.title("Correlation Heatmap of Numerical Features", fontsize = 16)
+heatmap = sns.heatmap(correlation_matrix, annot = True, fmt = "0.2f", cmap = "coolwarm_r", annot_kws={"size": 8})
+heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=90, horizontalalignment="right", fontsize = 12)
+heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation = 0, horizontalalignment = "right", fontsize = 12)
+plt.title("Correlation Heatmap of Features", fontsize = 12)
 plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
 plt.show()
 
+# From the correlation plot, we can see that some features are highly correlated, we will capture the
+# most important patterns in the data and avoid redundancy. Since the algorithm is sensitive to scale and
+# correlation of features, PCA may help us improve the performance of the model.
+
 from sklearn.decomposition import PCA
-n_components = 0.95
-pca = PCA(n_components=n_components)
-principal_components = pca.fit_transform(cluster_data)
+
+pca = PCA(n_components = 0.99) # keep 99% variability of data
+principal_components = pca.fit_transform(cluster_data.loc[:, ~cluster_data.columns.isin(['Customer ID'])])
 
 # Create a DataFrame to store the principal components
-principal_df = pd.DataFrame(data=principal_components)
+principal_df = pd.DataFrame(data=principal_components, columns=[f'PC{i}' for i in range(principal_components.shape[1])])
+principal_df['Customer ID'] = cluster_data['Customer ID']
 principal_df.head(n=2)
 
 explained_variance_ratio = pca.explained_variance_ratio_
 explained_variance_ratio.sum()
 
-correlation_matrix = principal_df.corr()
-plt.figure(figsize = (10,6))
-heatmap = sns.heatmap(correlation_matrix, annot = True, fmt = "0.2f", cmap = "coolwarm_r", annot_kws={"size": 12})
-heatmap.set_xticklabels(heatmap.get_xticklabels(), rotation=90, horizontalalignment="right", fontsize = 14)
-heatmap.set_yticklabels(heatmap.get_yticklabels(), rotation = 0, horizontalalignment = "right", fontsize = 14)
-plt.title("Correlation Heatmap of Numerical Features", fontsize = 16)
-plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
-plt.show()
-
-
-principal_df.head(n=2)
-
-cluster_data.head(n=2)
-
-
-
-
-
 
 # final data dictionary
 
-cluster_data_dict = cluster_data.set_index('Customer ID').apply(lambda x: x.values.tolist(), axis=1).to_dict()
+cluster_data_dict = principal_df.set_index('Customer ID').apply(lambda x: x.values.tolist(), axis=1).to_dict()
 
 first_5_records = {k: cluster_data_dict[k] for k in list(cluster_data_dict)[:5]}
 for key, value in first_5_records.items():
   print(f'{key}: {value}')
   
-  
+import random
+
 class Centroid:
   def __init__(self, location):
     self.location = location
     self.closest_users = set()
-    
-import random
-k = 3
+
+k = 11 # choose number of clusters, this should be based on some mathematical form (elbow method etc..)
 initial_centroids_customers = random.sample(sorted(list(cluster_data_dict.keys())), k) # randomly select k customers as initial centroid
-initial_centroids_customers
 
-centroids = {f'cluster{ik}Centroids': cluster_data_dict[initial_centroids_customers[ik]] for ik in range(k)} # get the feature values of randomly selected customer which is our initial centroid
-centroids
+# Initialize centroids using Centroid class
+centroids = {f'cluster{ik}Centroids': Centroid(cluster_data_dict[initial_centroids_customers[ik]]) for ik in range(k)} # get the feature values of randomly selected customer which is our initial centroid
 
-clusters = {f'cluster{ik}CustomerID': [] for ik in range(k)} # initialize empty list to store Customer IDs that gets assigned to each cluster
-clusters
+# Initialize clusters dictionary
+clusters = {f'cluster{ik}CustomerID': [] for ik in range(k)}  # initialize empty list to store Customer IDs that gets assigned to each cluster
 
-num_features_per_user = 14
-#distance = {f'Centroid{ik}distance': {u: sum([centroids[f'cluster{ik}Centroids'][j] - cluster_data_dict[u][j] for j in range(num_features_per_user)]) for u in cluster_data_dict} for ik in range(k)}
+num_features_per_user = principal_components.shape[1]
 
-# Calculate the distance from centroid to each datapoint
-distance = {} # Initialize an empty dictionary to store distances
-
-for ik in range(k): # loop over customer ID that is initialized as centroid
-  centroid_distances = {} # Create an empty dictionary to store distances from this customer ID to all other customer ID
-  
+for i in range(10): # iterate 20 times
+  distance = {f'Centroid{ik}distance': {} for ik in range(k)} # empty dict to store distances of each customer ID to all centroids
+  for ik in range(k): # loop over customer ID that is initialized as centroid
+    centroid_distances = {}  # Create an empty dictionary to store distances from this customer ID(centroid) to all other customer ID
+    for u in cluster_data_dict: # loop over all customer ID
+      # calculate the distance or dissimilarity or the difference between each feature(principal components) of the customer ID and centroid
+      total_distance = sum(abs(centroids[f'cluster{ik}Centroids'].location[j] - cluster_data_dict[u][j]) for j in range(num_features_per_user)) # Calculate the manhattan distance along each feature(principal components) dimension of the customer and centroid vectors
+      centroid_distances[u] = total_distance
+    distance[f'Centroid{ik}distance'] = centroid_distances
+  # Once we find the distance from each point to the centroids, we need to assign the points to its closet centroid
   for u in cluster_data_dict: # loop over all customer ID
-    total_distance = 0 # Initialize the total distance for this customer ID to be zero
-    
-    # calculate the distance or dissimilarity or the difference between each feature of the customer ID and centroid
-    for j in range(num_features_per_user): # Loop over each feature dimension
-      total_distance += centroids[f'cluster{ik}Centroids'][j] - cluster_data_dict[u][j] # Calculate the distance along each feature dimension and add it to tota_distance
-    
-    centroid_distances[u] = total_distance
-    
-  distance[f'Centroid{ik}distance'] = centroid_distances
+    distances = [distance[f'Centroid{ik}distance'][u] for ik in range(k)] # list that contains the distances between a specific customer ID and all the centroids
+    nearest_centroid_index = distances.index(min(distances)) # get the nearest centroid
+    clusters[f'cluster{nearest_centroid_index}CustomerID'].append(u) # assign the customer to the centroid
+  # Update centroids based on the mean of the assigned datapoints
+  for ik in range(k): # iterate over each cluster index
+    if clusters[f'cluster{ik}CustomerID']: # chekc if cluster with index ik has any assigned data points, If empty, no need to update centroid
+      mean_values = [sum(cluster_data_dict[u][j] for u in clusters[f'cluster{ik}CustomerID']) / len(clusters[f'cluster{ik}CustomerID']) for j in range(num_features_per_user)] # Compute the mean values across all data points assigned to the current cluster by iterating over each feature dimension(j).
+      centroids[f'cluster{ik}Centroids'].location = mean_values  # Update centroid location
+
+
+
