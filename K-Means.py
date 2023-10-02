@@ -205,57 +205,55 @@ os.chdir("C:/Users/kkhar/OneDrive/Desktop/K-Means-Clustering")
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", None)
 
-xls = pd.ExcelFile("retail.xlsx")
-sheet_names = xls.sheet_names
-num_sheets = len(sheet_names)
-print("Sheet Names:", sheet_names)
-print("Number of Sheets:", num_sheets)
+def readexcel(excelfile):
+  xls = pd.ExcelFile(excelfile)
+  sheet_names = xls.sheet_names
+  num_sheets = len(sheet_names)
+  print("Sheet Names:", sheet_names)
+  print("Number of Sheets:", num_sheets)
+  
+  data = {}
+  
+  for sheet_index in range(len(sheet_names)):
+    data[sheet_index] = pd.read_excel(excelfile, sheet_name = sheet_index)
+  
+  df = pd.concat(data.values(), ignore_index = True)
+  return df
 
-data1 = pd.read_excel("retail.xlsx", sheet_name = 0)
-data2 = pd.read_excel("retail.xlsx", sheet_name = 1)
 
-data1.columns
-data2.columns
+df = readexcel(excelfile = "retail.xlsx")
 
-data1.info()
-data2.info()
-
-stacked_df = pd.concat([data1, data2], ignore_index = True)
-
-null_mask = stacked_df.isnull().any(axis = 1)
-null_rows = stacked_df[null_mask]
-print(null_rows)
-
-stacked = stacked_df.dropna(subset = ['Customer ID'])
-stacked.isnull().sum()
-
-# Removing duplicate entries from a table
-
-import pandasql as psql
-
-query = """
-    SELECT Invoice, StockCode, Description, Quantity, InvoiceDate, Price, [Customer ID], Country
-    FROM stacked
-    GROUP BY Invoice, StockCode, Description, Quantity, InvoiceDate, Price, [Customer ID], Country
-"""
-stacked = psql.sqldf(query)
 
 def starts_with_letter(string):
   string = str(string)
   return string[0].isalpha()
 
-stacked = stacked[~stacked['Invoice'].apply(starts_with_letter)]
-stacked.describe()
 
-stacked = stacked[~(stacked['Price'] <= 0)]
+def datacleaning(df):
+  print(df.info())
+  null_mask = df.isnull().any(axis = 1)
+  null_rows = df[null_mask]
+  print("Count of Null Rows before Removal: ", len(null_rows))
+  df = df.dropna()
+  print("Count of Nulls in Columns after Removal: ", df.isnull().sum())
+  print("Number of Records after Null Removal: ", len(df))
+  print("Number of records before removing duplicates: ", df.count())
+  df = df.drop_duplicates()
+  print("Number of records after removing duplicates: ", df.count())
+  print("Summary of Data: ", df.describe())
+  print("Removing Invoices that starts with letters...")
+  df = df[~df['Invoice'].apply(starts_with_letter)]
+  print("Number of records after removing invoices starting with letters: ", len(df))
+  print("Removing prices that are negative or zero...")
+  df = df[~(df['Price'] <=  0)]
+  print("Number of records after removing negatively priced products: ", len(df))
+  print("Removing Negative Quantites...")
+  df = df[~(df['Quantity'] < 0)]
+  print("Number of records after removing Negative Quantity products: ", len(df))
+  print("Summary of Data:", df.describe())
 
-numeric_columns = stacked.select_dtypes(include=['number'])
-negative_mask = numeric_columns < 0
-
-negative_mask.any()
-stacked = stacked[~(stacked['Quantity'] < 0)]
-stacked.columns.to_list()
-
+  
+df = datacleaning(df=df)
 
 
 # RFM Analysis of Customers 
@@ -263,35 +261,50 @@ stacked.columns.to_list()
 # Recency: If a customer made a purchase within last 3 months then we 
 # call them recent customers
 
-stacked.head(n=2)
+def get_recency(df):
+  final_data = df.copy()
+  dataset_max = pd.to_datetime(final_data['InvoiceDate'].max())
+  customer_max = final_data.groupby('Customer ID', as_index = False)['InvoiceDate'].max()
+  customer_max.columns = ['Customer ID', 'Latest_Invoice_Date']
+  customer_max['Latest_Invoice_Date'] = pd.to_datetime(customer_max['Latest_Invoice_Date'])
+  customer_max['Recency'] = customer_max.Latest_Invoice_Date.apply(lambda x: (dataset_max - x).days) 
+  customer_max = customer_max.drop(['Latest_Invoice_Date'], axis = 1)
+  return customer_max
 
-final_data = stacked.copy()
-final_data.describe()
+get_recency(df=df)  
+  
+def get_frequency(df):
+  final_data = df.copy()
+  Item_Count = final_data.groupby(['Customer ID'], as_index = False).agg({'Invoice': lambda x: len(x)})
+  Item_Count.columns = ['Customer ID', 'Frequency']
+  return Item_Count
 
-dataset_max = final_data['InvoiceDate'].max()
-dataset_max = pd.to_datetime(dataset_max)  
-customer_max = final_data.groupby('Customer ID', as_index = False)['InvoiceDate'].max()
-customer_max.columns = ['Customer ID', 'Latest_Invoice_Date']
-customer_max['Latest_Invoice_Date'] = pd.to_datetime(customer_max['Latest_Invoice_Date'])
-customer_max['Recency'] = customer_max.Latest_Invoice_Date.apply(lambda x: (dataset_max - x).days) 
-customer_max = customer_max.drop(['Latest_Invoice_Date'], axis = 1)
+get_frequency(df=df)
 
-# Frequency, How Frequent Customers are making purchases
-Invoice_Count = final_data.groupby(['Customer ID'], as_index = False).agg({'Invoice' : lambda x:len(x)})
-Invoice_Count.columns = ['Customer ID', 'Frequency']
 
-# Monetary, How much did Customers Spend
-final_data['Sales'] = final_data['Price']*final_data['Quantity']
-Total_Sales = final_data.groupby('Customer ID')['Sales'].sum().reset_index()
-Total_Sales.columns = ['Customer ID', 'Monetary']
-Total_Sales = Total_Sales.reset_index(drop = True)
-customer_max = customer_max.reset_index(drop = True)
-Invoice_Count = Invoice_Count.reset_index(drop = True)
-merge1 = pd.merge(customer_max, Invoice_Count, on = 'Customer ID')
-df = pd.merge(merge1, Total_Sales, on = 'Customer ID')
+def get_monetary(df):
+  final_data = df.copy()
+  final_data['Sales'] = final_data['Price']*final_data['Quantity']
+  Total_Sales = final_data.groupby('Customer ID')['Sales'].sum().reset_index()
+  Total_Sales.columns = ['Customer ID', 'Monetary']
+  return Total_Sales
+
+get_monetary(df = df)
+
+
+def mergedata(df):
+  recency = get_recency(df = df)
+  recency = recency.reset_index(drop = True)
+  frequency = get_frequency(df = df)
+  frequency = frequency.reset_index(drop = True)
+  monetary = get_monetary(df = df)
+  monetary = monetary.reset_index(drop = True)
+  merge1 = pd.merge(recency, frequency, on = 'Customer ID')
+  merge2 = pd.merge(merge1, monetary, on = 'Customer ID')
+  return merge2
+  
+df = mergedata(df = df)  
 df.head(n=2)
-
-Total_Sales[Total_Sales['Customer ID']==18102]
 
 
 def calculate_rfm_scores(dataframe, r_col, f_col, m_col):
@@ -345,14 +358,6 @@ def calculate_rfm_scores(dataframe, r_col, f_col, m_col):
 rfm_scores = calculate_rfm_scores(df, 'Recency', 'Frequency', 'Monetary')
 df.head(n=2)    
 
-#df.tail()
-#df[df['Customer ID'] == 18286]
-#18286, #18287
-# 1,4,2 and 4,2,1
-
-#Customer ID Recency Frequency Monetary R F M Country
-
-# do not merge, need to process Country in Lat Long - exclude for now
 
 df['RFM'] = df['R'].astype(str)+df['F'].astype(str) + df['M'].astype(str)
 df.head(n=2)
@@ -360,34 +365,46 @@ df.head(n=2)
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-sns.displot(df['Recency']+1)
-plt.show()
+def plot_combined_distribution(data, columns, xlims=None):
+  num_plots = len(columns)
+  fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(15, 5))
 
-sns.displot(df['Frequency']+1)
-plt.xlim(0,1000)
-plt.show()
+  for i, column in enumerate(columns):
+    sns.histplot(data[column], ax=axes[i])
+    axes[i].set_title(f'Distribution of {column}')
+    if xlims and xlims[i]:
+      axes[i].set_xlim(xlims[i])
 
-sns.displot(df['Monetary']+1)
-plt.xlim(0,10000)
-plt.show()
+  plt.tight_layout()
+  plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
+  plt.show()
+
+columns_to_plot = ['Recency', 'Frequency', 'Monetary']
+xlims = [(None, None), (0, 900), (0, 10000)]
+
+plot_combined_distribution(df, columns_to_plot, xlims)
+
 
 # Check the skewness of data
 from scipy.stats import skew
 
-skew((df['Recency']+1)**0.32) 
-skew(df['Frequency']+1)
-skew(df['Monetary']+1)
+def check_skew(df, columns):
+  skewness = df[columns].skew()
+  print("Skewness: ")
+  return skewness
+
+check_skew(df, columns = ['Recency', 'Frequency', 'Monetary'])
+
+def check_kurtosis(df, columns):
+  skewness = df[columns].kurtosis()
+  print("Kurtosis: ")
+  return skewness
+
+check_kurtosis(df, columns = ['Recency', 'Frequency', 'Monetary'])
 
 # We can see that Frequency and Monetary is highly skewed to the right. We
 # need to make it look more normal and one  way is to use log transformation in these
 # type of cases. None of the variables are symmetric
-
-# Check kurtosis of data
-from scipy.stats import kurtosis
-
-kurtosis(df['Recency']+1) 
-kurtosis(df['Frequency']+1)
-kurtosis(df['Monetary']+1)
 
 # The kurtosis value for Recency is negative, indicating that the distribution has
 # lighter tails and is flatter than a normal distribution (platykurtic). This
@@ -407,45 +424,87 @@ kurtosis(df['Monetary']+1)
 # clusters.
 
 # Hence, we transform and scale the variables
-from scipy.stats import boxcox
 
-df['power_R'] = (df['Recency']+1)**0.32
-df['log_F'] = np.log(df['Frequency']+1)
-df['log_M'] = np.log(df['Monetary']+1)
+def power_transform(df, columns, power):
+  for col in columns:
+    df[f'power_{col}'] = (df[columns]+1)**power
+  return df 
 
-fig, ax = plt.subplots()
-sns.kdeplot(df['power_R'], label='Power Recency', ax=ax)
-sns.kdeplot(df['log_F'], label='Log Frequency', ax=ax)
-sns.kdeplot(df['log_M'], label='Log Monetary', ax=ax)
-ax.legend()
-plt.show()
+df = power_transform(df=df, columns = ['Recency'], power = 0.32)
+df.head(n=2)
+
+def log_transform(df, columns):
+  for col in columns:
+    df[f'log_{col}'] = np.log(df[col] + 1)
+  return df
+
+df = log_transform(df, columns = ['Frequency', 'Monetary'])
+df.head(n=2)
+
+
+def plot_transformed_kde(df, transformed_cols):
+  fig, ax = plt.subplots()
+
+  for col in transformed_cols:
+    sns.kdeplot(df[col], label=f'{col}', ax=ax)
+
+  ax.legend()
+  plt.xlabel('')
+  plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
+  plt.show()
+
+plot_transformed_kde(df, ['power_Recency', 'log_Frequency', 'log_Monetary'])
+
+# We can see that power transforming the Recency exhibits bimodal density. We will
+# apply the GMM model to separate them and scale each one afterwards
+# I will create a new variable recency_bimodal to represent two distinct peaks in recency variable using
+# gaussian mixture model
+
+# Continuous: If "number of days" refers to a continuous quantity, such as the time elapsed between two events, it is considered continuous. For example, the time duration between two timestamps (measured with high precision) can be treated as a continuous variable.
+
+# Discrete: On the other hand, if "number of days" is used to represent a count or a number of whole days (e.g., the number of days until an event occurs), then it is discrete. Discrete variables take on distinct, separate values and do not have values between them.
+from sklearn.mixture import GaussianMixture
+
+def separate_recency(df, columns, components, randomstate):
+  gmm = GaussianMixture(n_components=components, random_state=randomstate)
+  for cols in columns:
+    df[f'bimodal_{cols}'] = gmm.fit_predict(pd.to_numeric(df[columns[0]]).to_numpy().reshape(-1, 1))
+  return df
+
+df = separate_recency(df=df, columns=['Recency'], components=2, randomstate=13)
+df.head(n=2)
 
 # x_scaled = x - x_min/x_max - x_min
 def minMaxScaler(numcol):
   minx = np.min(numcol)
   maxx = np.max(numcol)
-  numcol = (numcol - minx) / (maxx - minx)
-  return numcol
+  scaled_col = (numcol - minx) / (maxx - minx)
+  return scaled_col
 
 
 # Scaling Recency, Frequency and Monetary Values 
-df['scaled_Recency'] = minMaxScaler(df['power_R']) 
-df['scaled_Frequency'] = minMaxScaler(df['log_F'])
-df['scaled_Monetary']  = minMaxScaler(df['log_M'])
+df['scaled_Recency'] = df.groupby('bimodal_Recency')['power_Recency'].transform(minMaxScaler)
+df['scaled_Frequency'] = minMaxScaler(df['log_Frequency'])
+df['scaled_Monetary']  = minMaxScaler(df['log_Monetary'])
+
+
+check_skew(df, columns = ['Recency', 'Frequency', 'Monetary'])
+check_skew(df, columns = ['power_Recency', 'log_Frequency', 'log_Monetary'])
+check_skew(df, columns = ['scaled_Recency', 'scaled_Frequency', 'scaled_Monetary'])
+
+check_kurtosis(df, columns = ['Recency', 'Frequency', 'Monetary'])
+check_kurtosis(df, columns = ['power_Recency', 'log_Frequency', 'log_Monetary'])
+check_kurtosis(df, columns = ['scaled_Recency', 'scaled_Frequency', 'scaled_Monetary'])
+
+plot_transformed_kde(df, ['power_Recency', 'log_Frequency', 'log_Monetary'])
+plot_transformed_kde(df, ['scaled_Recency', 'scaled_Frequency', 'scaled_Monetary'])
+
+
+
 df['scaled_RFM'] = minMaxScaler(df['RFM'].astype(int))
 df['scaled_R'] = minMaxScaler(df['R'])
 df['scaled_F'] = minMaxScaler(df['F'])
 df['scaled_M'] = minMaxScaler(df['M'])
-
-# I will create a new variable recency_bimodal to represent two distinct peaks in recency variable
-
-from sklearn.mixture import GaussianMixture
-gmm = GaussianMixture(n_components=1)  
-gmm.fit((df['Recency']**0.32).to_numpy().reshape(-1, 1))
-thresholds = gmm.means_
-thresholds = pd.DataFrame(thresholds).squeeze()
-print(thresholds)
-df['Recency_bimodal'] = ((df['Recency']**0.32) > thresholds.squeeze()).astype(int)
 
 
 # Now I will map the RFM scores to its segments
@@ -643,41 +702,120 @@ for key, value in first_5_records.items():
   
 import random
 
-class Centroid:
-  def __init__(self, location):
-    self.location = location
-    self.closest_users = set()
+
+# We want to keep track of which CustomerID is assigned to which Centroid
+class Centroid: #blueprint to create clusters that represents a central point
+  def __init__(self, location): # If we want to create a new central point, we need to provide its initial location
+    self.location = location # give central point its initial position
+    self.closest_users = set() # empty set to create track of the Customers who are closet to this central point
+
+
+# set ensures that a customer can only be assigned to single Cluster
+# Ordering does not matter. What matters is the above
+# 
+
 
 k = 11 # choose number of clusters, this should be based on some mathematical form (elbow method etc..)
 initial_centroids_customers = random.sample(sorted(list(cluster_data_dict.keys())), k) # randomly select k customers as initial centroid
 
-# Initialize centroids using Centroid class
-centroids = {f'cluster{ik}Centroids': Centroid(cluster_data_dict[initial_centroids_customers[ik]]) for ik in range(k)} # get the feature values of randomly selected customer which is our initial centroid
-
-# Initialize clusters dictionary
-clusters = {f'cluster{ik}CustomerID': [] for ik in range(k)}  # initialize empty list to store Customer IDs that gets assigned to each cluster
+centroids = {f'Cluster {ik} Centroids': Centroid(cluster_data_dict[initial_centroids_customers[ik]]) for ik in range(k)}
+clusters = {f'Cluster {ik} CustomerID': [] for ik in range(k)}  # initialize empty list to store Customer IDs that gets assigned to each cluster
+distance = {f'Centroid {ik} Distance': {} for ik in range(k)} # empty dict to store distances of all centroid to each customer ID to all centroids
 
 num_features_per_user = principal_components.shape[1]
 
-for i in range(10): # iterate 20 times
-  distance = {f'Centroid{ik}distance': {} for ik in range(k)} # empty dict to store distances of each customer ID to all centroids
+# redo to implement either convergence or max iteration
+
+for i in range(10): # iterate 10 times
   for ik in range(k): # loop over customer ID that is initialized as centroid
-    centroid_distances = {}  # Create an empty dictionary to store distances from this customer ID(centroid) to all other customer ID
-    for u in cluster_data_dict: # loop over all customer ID
-      # calculate the distance or dissimilarity or the difference between each feature(principal components) of the customer ID and centroid
-      total_distance = sum(abs(centroids[f'cluster{ik}Centroids'].location[j] - cluster_data_dict[u][j]) for j in range(num_features_per_user)) # Calculate the manhattan distance along each feature(principal components) dimension of the customer and centroid vectors
-      centroid_distances[u] = total_distance
-    distance[f'Centroid{ik}distance'] = centroid_distances
+    centroid_distance = {}  # Create an empty dictionary to store distances from this customer ID(centroid) to all other customer ID
+    for users in cluster_data_dict: # loop over all customer ID
+      distance_sum = 0
+      for features in range(num_features_per_user): # loop over all features
+      # calculate the distance or dissimilarity or the difference between each feature(principal components) of the customer ID and centroid and sum them
+        distance_sum += abs(centroids[f'Cluster {ik} Centroids'].location[features] - cluster_data_dict[users][features])
+      centroid_distance[users] = distance_sum
+    distance[f'Centroid {ik} Distance'] = centroid_distance
+  
   # Once we find the distance from each point to the centroids, we need to assign the points to its closet centroid
-  for u in cluster_data_dict: # loop over all customer ID
-    distances = [distance[f'Centroid{ik}distance'][u] for ik in range(k)] # list that contains the distances between a specific customer ID and all the centroids
+  for users in cluster_data_dict: # loop over all customer ID
+    distances = [distance[f'Centroid {ik} Distance'][users] for ik in range(k)] # Get the list of distance to all centroids for this Customer ID
     nearest_centroid_index = distances.index(min(distances)) # get the nearest centroid
-    clusters[f'cluster{nearest_centroid_index}CustomerID'].append(u) # assign the customer to the centroid
+    clusters[f'Cluster {nearest_centroid_index} CustomerID'].append(users) # assign the customer to the centroid
+  
   # Update centroids based on the mean of the assigned datapoints
   for ik in range(k): # iterate over each cluster index
-    if clusters[f'cluster{ik}CustomerID']: # chekc if cluster with index ik has any assigned data points, If empty, no need to update centroid
-      mean_values = [sum(cluster_data_dict[u][j] for u in clusters[f'cluster{ik}CustomerID']) / len(clusters[f'cluster{ik}CustomerID']) for j in range(num_features_per_user)] # Compute the mean values across all data points assigned to the current cluster by iterating over each feature dimension(j).
-      centroids[f'cluster{ik}Centroids'].location = mean_values  # Update centroid location
+    if clusters[f'Cluster {ik} CustomerID']: # chekc if cluster with index ik has any assigned data points, If empty, no need to update centroid
+      mean_values = [sum(cluster_data_dict[u][j] for u in clusters[f'Cluster {ik} CustomerID']) / len(clusters[f'Cluster {ik} CustomerID']) for j in range(num_features_per_user)] # Compute the mean values across all data points assigned to the current cluster by iterating over each feature dimension(j).
+      centroids[f'Cluster {ik} Centroids'].location = mean_values  # Update centroid location
+
+
+for users in cluster_data_dict:
+  distances = [distance[f'Centroid {ik} Distance'][users] for ik in range(k)]
+  
+distances.index(min(distances)) # get the nearest centroid
+clusters[f'Cluster {nearest_centroid_index} CustomerID'].append(users) # as  
+clusters
+
+for ik in range(k): # iterate over each cluster index
+  if clusters[f'Cluster {ik} CustomerID']: # chekc if cluster with index ik has any assigned data points, If empty, no need to update centroid
+    mean_values = [sum(cluster_data_dict[u][j] for u in clusters[f'Cluster {ik} CustomerID']) / len(clusters[f'Cluster {ik} CustomerID']) for j in range(num_features_per_user)] # Compute the mean values across all data points assigned to the current cluster by iterating over each feature dimension(j).
+    centroids[f'Cluster {ik} Centroids'].location = mean_values  # Update centroid location
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Not needed we have domain knowledge of 11 segments.
+
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+
+# Assuming cluster_data_dict is your data
+X = principal_components  # or cluster_data_dict, depending on your data structure
+
+# Initialize a range of k values
+k_values = range(1, 21)
+
+# Fit KMeans for each k and store the inertia (within-cluster sum of squares) in a list
+inertia = []
+for k in k_values:
+    kmeans = KMeans(n_clusters=k, random_state=11, n_init='auto')
+    kmeans.fit(X)
+    inertia.append(kmeans.inertia_)
+
+# Plot the elbow curve
+plt.clf()
+plt.plot(k_values, inertia, marker='o')
+plt.xlabel('Number of Clusters (k)')
+plt.ylabel('Inertia')
+plt.title('Elbow Method for Optimal k')
+plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
+plt.show()
