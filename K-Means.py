@@ -366,18 +366,18 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 def plot_combined_distribution(data, columns, xlims=None):
-    num_plots = len(columns)
-    fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(15, 5))
+  num_plots = len(columns)
+  fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(15, 5))
 
-    for i, column in enumerate(columns):
-        sns.histplot(data[column], ax=axes[i])
-        axes[i].set_title(f'Distribution of {column}')
-        if xlims and xlims[i]:
-            axes[i].set_xlim(xlims[i])
+  for i, column in enumerate(columns):
+    sns.histplot(data[column], ax=axes[i])
+    axes[i].set_title(f'Distribution of {column}')
+    if xlims and xlims[i]:
+      axes[i].set_xlim(xlims[i])
 
-    plt.tight_layout()
-    plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
-    plt.show()
+  plt.tight_layout()
+  plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
+  plt.show()
 
 columns_to_plot = ['Recency', 'Frequency', 'Monetary']
 xlims = [(None, None), (0, 900), (0, 10000)]
