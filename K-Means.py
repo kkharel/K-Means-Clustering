@@ -231,7 +231,7 @@ def starts_with_letter(string):
 
 def datacleaning(df):
   print(df.info())
-  null_mask = df.isnull().any(axis = 1)
+  null_mask = df.isnull().any(axis=1)
   null_rows = df[null_mask]
   print("Count of Null Rows before Removal: ", len(null_rows))
   df = df.dropna()
@@ -241,20 +241,20 @@ def datacleaning(df):
   df = df.drop_duplicates()
   print("Number of records after removing duplicates: ", df.count())
   print("Summary of Data: ", df.describe())
-  print("Removing Invoices that starts with letters...")
+  print("Removing Invoices that start with letters...")
   df = df[~df['Invoice'].apply(starts_with_letter)]
   print("Number of records after removing invoices starting with letters: ", len(df))
   print("Removing prices that are negative or zero...")
-  df = df[~(df['Price'] <=  0)]
+  df = df[~(df['Price'] <= 0)]
   print("Number of records after removing negatively priced products: ", len(df))
-  print("Removing Negative Quantites...")
+  print("Removing Negative Quantities...")
   df = df[~(df['Quantity'] < 0)]
   print("Number of records after removing Negative Quantity products: ", len(df))
   print("Summary of Data:", df.describe())
-
+  return df  
   
 df = datacleaning(df=df)
-
+df.head(n=2)
 
 # RFM Analysis of Customers 
 
@@ -315,39 +315,39 @@ def calculate_rfm_scores(dataframe, r_col, f_col, m_col):
 
   def R_score(recency):
     if recency <= r_quantiles.iloc[0]:
-      return 1
+      return 5
     elif recency > r_quantiles.iloc[0] and recency <= r_quantiles.iloc[1]:
-      return 2
+      return 4
     elif recency > r_quantiles.iloc[1] and recency <= r_quantiles.iloc[2]:
       return 3
     elif recency > r_quantiles.iloc[2] and recency <= r_quantiles.iloc[3]:
-      return 4
+      return 2
     else:
-      return 5
+      return 1
 
   def F_score(frequency):
     if frequency <= f_quantiles.iloc[0]:
-      return 5
+      return 1
     elif frequency > f_quantiles.iloc[0] and frequency <= f_quantiles.iloc[1]:
-      return 4
+      return 2
     elif frequency > f_quantiles.iloc[1] and frequency <= f_quantiles.iloc[2]:
       return 3
     elif frequency > f_quantiles.iloc[2] and frequency <= f_quantiles.iloc[3]:
-      return 2
+      return 4
     else:
-      return 1
+      return 5
 
   def M_score(monetary):
     if monetary <= m_quantiles.iloc[0]:
-      return 5
+      return 1
     elif monetary > m_quantiles.iloc[0] and monetary <= m_quantiles.iloc[1]:
-      return 4
+      return 2
     elif monetary > m_quantiles.iloc[1] and monetary <= m_quantiles.iloc[2]:
       return 3
     elif monetary > m_quantiles.iloc[2] and monetary <= m_quantiles.iloc[3]:
-      return 2
+      return 4
     else:
-      return 1
+      return 5
 
   dataframe['R'] = dataframe[r_col].apply(R_score)
   dataframe['F'] = dataframe[f_col].apply(F_score)
@@ -455,6 +455,35 @@ def plot_transformed_kde(df, transformed_cols):
 
 plot_transformed_kde(df, ['power_Recency', 'log_Frequency', 'log_Monetary'])
 
+# We look at boxplot of above transformed variables
+
+def create_boxplot_multi_variables(df, variable_list):
+  plt.clf()
+  plt.boxplot([df[var] for var in variable_list], labels=variable_list)
+  plt.ylabel('Values')
+  plt.title('Box Plot of Variables')
+  plt.show()
+
+
+create_boxplot_multi_variables(df, ['power_Recency', 'log_Frequency', 'log_Monetary'])
+
+
+def replace_outliers_with_bounds_multi_variables(df, variable_list, percentile_low=25, percentile_high=75):
+  for var in variable_list:
+    data_series = df[var]
+    
+    Q1 = np.percentile(data_series, percentile_low)
+    Q3 = np.percentile(data_series, percentile_high)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+
+    df[var] = np.where((df[var] < lower_bound), lower_bound, df[var])
+    df[var] = np.where((df[var] > upper_bound), upper_bound, df[var])
+
+  return df
+
+replace_outliers_with_bounds_multi_variables(df, ['log_Frequency', 'power_Recency', 'log_Monetary'])
 # We can see that power transforming the Recency exhibits bimodal density. We will
 # apply the GMM model to separate them and scale each one afterwards
 # I will create a new variable recency_bimodal to represent two distinct peaks in recency variable using
@@ -496,10 +525,19 @@ check_kurtosis(df, columns = ['Recency', 'Frequency', 'Monetary'])
 check_kurtosis(df, columns = ['power_Recency', 'log_Frequency', 'log_Monetary'])
 check_kurtosis(df, columns = ['scaled_Recency', 'scaled_Frequency', 'scaled_Monetary'])
 
+
+#Skewness:
+
+#All the skewness values are relatively close to zero, with scaled_Recency being the most negatively skewed (-0.25), scaled_Frequency being close to zero (-0.03), and scaled_Monetary being slightly positively skewed (0.27). Generally, skewness values within the range of -0.5 to 0.5 are considered acceptable for assuming normality.
+#Kurtosis:
+
+#The kurtosis values are also within a reasonable range. scaled_Recency and scaled_Frequency both have negative kurtosis values, indicating slightly platykurtic distributions, but the magnitudes are not extreme. scaled_Monetary has a positive kurtosis value, indicating a slightly leptokurtic distribution, but again, the magnitude is not highly pronounced.
+
 plot_transformed_kde(df, ['power_Recency', 'log_Frequency', 'log_Monetary'])
 plot_transformed_kde(df, ['scaled_Recency', 'scaled_Frequency', 'scaled_Monetary'])
 
 
+df.head(n=2)
 
 df['scaled_RFM'] = minMaxScaler(df['RFM'].astype(int))
 df['scaled_R'] = minMaxScaler(df['R'])
@@ -640,29 +678,24 @@ def rfm_score_to_label(score):
   return rfm_mapping.get(score, "Unknown")
 
 
+
 backup = df.copy()
 df = backup
 
 df.head(n=2)
 
-# Creating a label variable to store all the customer segmentation mappings
-df['label'] = df['RFM'].astype(int).apply(rfm_score_to_label)
-df['label'].unique()
+df['segment'] = df['RFM'].astype(int).apply(rfm_score_to_label)
+df['check_segment'] = df['RFM'].astype(int).apply(rfm_score_to_label)
 
-# Converting customer segmentation mappings to dummy variables
-df = pd.get_dummies(df, columns=['label'])
-df[df.columns[df.columns.str.startswith('label_')]] = df[df.columns[df.columns.str.startswith('label_')]].astype(int)
+
+df = pd.get_dummies(df, columns=['segment'])
+df[df.columns[df.columns.str.startswith('segment_')]] = df[df.columns[df.columns.str.startswith('segment_')]].astype(int)
 df.columns.to_list()
 df.head(n=2)
-df['R']
 
-# Now we will filter the variables that goes into our k-means model
-df.columns.to_list()
-cols = [ 'Customer ID', 'scaled_R', 'scaled_F', 'scaled_M', 'scaled_Monetary', 'scaled_Frequency', 'scaled_Recency', 'Recency_bimodal', 'label_AboutToSleep', 'label_AtRisk', 'label_CannotLoseThem', 'label_Champions', 'label_Hibernating', 'label_Lost', 'label_LoyalCustomers', 'label_NeedAttention', 'label_PotentialLoyalist', 'label_Promising', 'label_RecentCustomers']
+
+cols = ['Customer ID', 'scaled_RFM', 'bimodal_Recency', 'scaled_Recency', 'scaled_Frequency', 'scaled_Monetary',  'segment_AboutToSleep', 'segment_AtRisk', 'segment_CannotLoseThem', 'segment_Champions', 'segment_Hibernating', 'segment_Lost', 'segment_LoyalCustomers', 'segment_NeedAttention', 'segment_PotentialLoyalist', 'segment_Promising', 'segment_RecentCustomers']
 cluster_data = df[cols].astype(float)
-cluster_data.head()
-cluster_data.columns.to_list()
-
 
 cor_df = cluster_data
 correlation_matrix = cor_df.corr()
@@ -680,7 +713,7 @@ plt.show()
 
 from sklearn.decomposition import PCA
 
-pca = PCA(n_components = 0.99) # keep 99% variability of data
+pca = PCA(n_components = 0.90) # keep 90% variability of data
 principal_components = pca.fit_transform(cluster_data.loc[:, ~cluster_data.columns.isin(['Customer ID'])])
 
 # Create a DataFrame to store the principal components
@@ -699,98 +732,11 @@ cluster_data_dict = principal_df.set_index('Customer ID').apply(lambda x: x.valu
 first_5_records = {k: cluster_data_dict[k] for k in list(cluster_data_dict)[:5]}
 for key, value in first_5_records.items():
   print(f'{key}: {value}')
-  
-import random
 
-
-# We want to keep track of which CustomerID is assigned to which Centroid
-class Centroid: #blueprint to create clusters that represents a central point
-  def __init__(self, location): # If we want to create a new central point, we need to provide its initial location
-    self.location = location # give central point its initial position
-    self.closest_users = set() # empty set to create track of the Customers who are closet to this central point
-
-
-# set ensures that a customer can only be assigned to single Cluster
-# Ordering does not matter. What matters is the above
-# 
-
-
-k = 11 # choose number of clusters, this should be based on some mathematical form (elbow method etc..)
-initial_centroids_customers = random.sample(sorted(list(cluster_data_dict.keys())), k) # randomly select k customers as initial centroid
-
-centroids = {f'Cluster {ik} Centroids': Centroid(cluster_data_dict[initial_centroids_customers[ik]]) for ik in range(k)}
-clusters = {f'Cluster {ik} CustomerID': [] for ik in range(k)}  # initialize empty list to store Customer IDs that gets assigned to each cluster
-distance = {f'Centroid {ik} Distance': {} for ik in range(k)} # empty dict to store distances of all centroid to each customer ID to all centroids
-
-num_features_per_user = principal_components.shape[1]
-
-# redo to implement either convergence or max iteration
-
-for i in range(10): # iterate 10 times
-  for ik in range(k): # loop over customer ID that is initialized as centroid
-    centroid_distance = {}  # Create an empty dictionary to store distances from this customer ID(centroid) to all other customer ID
-    for users in cluster_data_dict: # loop over all customer ID
-      distance_sum = 0
-      for features in range(num_features_per_user): # loop over all features
-      # calculate the distance or dissimilarity or the difference between each feature(principal components) of the customer ID and centroid and sum them
-        distance_sum += abs(centroids[f'Cluster {ik} Centroids'].location[features] - cluster_data_dict[users][features])
-      centroid_distance[users] = distance_sum
-    distance[f'Centroid {ik} Distance'] = centroid_distance
-  
-  # Once we find the distance from each point to the centroids, we need to assign the points to its closet centroid
-  for users in cluster_data_dict: # loop over all customer ID
-    distances = [distance[f'Centroid {ik} Distance'][users] for ik in range(k)] # Get the list of distance to all centroids for this Customer ID
-    nearest_centroid_index = distances.index(min(distances)) # get the nearest centroid
-    clusters[f'Cluster {nearest_centroid_index} CustomerID'].append(users) # assign the customer to the centroid
-  
-  # Update centroids based on the mean of the assigned datapoints
-  for ik in range(k): # iterate over each cluster index
-    if clusters[f'Cluster {ik} CustomerID']: # chekc if cluster with index ik has any assigned data points, If empty, no need to update centroid
-      mean_values = [sum(cluster_data_dict[u][j] for u in clusters[f'Cluster {ik} CustomerID']) / len(clusters[f'Cluster {ik} CustomerID']) for j in range(num_features_per_user)] # Compute the mean values across all data points assigned to the current cluster by iterating over each feature dimension(j).
-      centroids[f'Cluster {ik} Centroids'].location = mean_values  # Update centroid location
-
-
-for users in cluster_data_dict:
-  distances = [distance[f'Centroid {ik} Distance'][users] for ik in range(k)]
-  
-distances.index(min(distances)) # get the nearest centroid
-clusters[f'Cluster {nearest_centroid_index} CustomerID'].append(users) # as  
-clusters
-
-for ik in range(k): # iterate over each cluster index
-  if clusters[f'Cluster {ik} CustomerID']: # chekc if cluster with index ik has any assigned data points, If empty, no need to update centroid
-    mean_values = [sum(cluster_data_dict[u][j] for u in clusters[f'Cluster {ik} CustomerID']) / len(clusters[f'Cluster {ik} CustomerID']) for j in range(num_features_per_user)] # Compute the mean values across all data points assigned to the current cluster by iterating over each feature dimension(j).
-    centroids[f'Cluster {ik} Centroids'].location = mean_values  # Update centroid location
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+num_keys = len(cluster_data_dict)
+print("Number of keys:", num_keys)
+num_values = len(cluster_data_dict.values())
+print("Number of values:", num_values) 
 
 
 # Not needed we have domain knowledge of 11 segments.
@@ -798,20 +744,13 @@ for ik in range(k): # iterate over each cluster index
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 
-# Assuming cluster_data_dict is your data
-X = principal_components  # or cluster_data_dict, depending on your data structure
-
-# Initialize a range of k values
+X = principal_components
 k_values = range(1, 21)
-
-# Fit KMeans for each k and store the inertia (within-cluster sum of squares) in a list
 inertia = []
 for k in k_values:
-    kmeans = KMeans(n_clusters=k, random_state=11, n_init='auto')
-    kmeans.fit(X)
-    inertia.append(kmeans.inertia_)
-
-# Plot the elbow curve
+  kmeans = KMeans(n_clusters=k, random_state=11, n_init='auto')
+  kmeans.fit(X)
+  inertia.append(kmeans.inertia_)
 plt.clf()
 plt.plot(k_values, inertia, marker='o')
 plt.xlabel('Number of Clusters (k)')
@@ -819,3 +758,130 @@ plt.ylabel('Inertia')
 plt.title('Elbow Method for Optimal k')
 plt.savefig('correlation_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
 plt.show()
+
+
+import random
+import copy
+
+# We want to keep track of which CustomerID is assigned to which Centroid
+class Centroid: #blueprint to create clusters that represents a central point
+  def __init__(self): # If we want to create a new central point, we need to provide its initial location
+    self.closest_users = set() # empty set to create track of the Customers who are closet to this central point
+
+
+# set ensures that a customer can only be assigned to single Cluster
+# Ordering does not matter. What matters is the above
+
+# Set the number of clusters
+num_clusters = 11
+
+# Select random initial centroids
+initial_centroid_customerID = random.sample(list(cluster_data_dict.keys()), num_clusters)
+
+# Initialize centroids
+centroids = {f'cluster {ik} Centroids': cluster_data_dict[initial_centroid_customerID[ik]] for ik in range(num_clusters)}
+
+# Get the number of features per user
+num_features_per_user = len(list(cluster_data_dict.values())[0])
+
+# Main loop for K-means algorithm
+
+# Initialize centroids randomly
+centroids = {f'cluster {ik} Centroids': [random.uniform(0, 1) for _ in range(num_features_per_user)] for ik in range(num_clusters)}
+
+# Maximum number of iterations
+max_iterations = 20
+
+# Previous centroids to check for convergence
+prev_centroids = copy.deepcopy(centroids)
+
+for iteration in range(max_iterations):
+    # Initialize clusters at the beginning of each iteration
+    clusters = {f'cluster {ik} CustomerID': [] for ik in range(num_clusters)}
+
+    # Calculate distances
+    distances = {f'centroid {ik} distance': {user: sum([(centroids[f'cluster {ik} Centroids'][feature] - cluster_data_dict[user][feature])**2 for feature in range(num_features_per_user)]) for user in cluster_data_dict} for ik in range(num_clusters)}
+
+    # Assign each user to the nearest centroid
+    for user in cluster_data_dict:
+        temp_distance = [distances[f'centroid {ik} distance'][user] for ik in range(num_clusters)]
+        clusters[f'cluster {temp_distance.index(min(temp_distance))} CustomerID'].append(user)
+
+    # Update centroids
+    for ik in range(num_clusters):
+        mean_value = [0] * num_features_per_user
+        cluster_size = len(clusters[f'cluster {ik} CustomerID'])
+        if cluster_size != 0:
+            for user in clusters[f'cluster {ik} CustomerID']:
+                mean_value = [mean_value[feature] + cluster_data_dict[user][feature] for feature in range(num_features_per_user)]
+            centroids[f'cluster {ik} Centroids'] = [mean_value[feature] / cluster_size for feature in range(num_features_per_user)]
+        else:
+            # If a cluster is empty, assign a random point as its centroid
+            centroids[f'cluster {ik} Centroids'] = cluster_data_dict[random.choice(list(cluster_data_dict.keys()))]
+
+    # Check for convergence
+    if prev_centroids == centroids:
+        print(f"Converged at iteration {iteration + 1}")
+        break
+
+    # Update previous centroids for the next iteration
+    prev_centroids = copy.deepcopy(centroids)
+
+    #print(f"Iteration {iteration + 1}: Clusters = {clusters}")
+
+#print("Final Clusters:", clusters)
+#print("Final Centroids:", centroids)
+#print(centroids.values())
+
+values_list = clusters.get('cluster 1 CustomerID', [])
+num_values = len(values_list)
+print("Number of values:", num_values)
+
+
+
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+
+def plot_clusters_2d(data_dict, centroids, clusters):
+  fig = go.Figure()
+  colormap = px.colors.qualitative.Set1
+  for i, centroid_key in enumerate(centroids):
+    if isinstance(centroids[centroid_key], list):
+      centroid_location = centroids[centroid_key]
+    else:
+      centroid_location = centroids[centroid_key].location
+    fig.add_trace(go.Scatter(x=[centroid_location[0]], y=[centroid_location[1]], mode='markers', marker=dict(size=8, color='black', symbol='x'), hoverinfo='text', text=[f'Centroid of {centroid_key}'], name=f'Centroids {i}'))
+  for i, cluster_key in enumerate(clusters):
+    cluster_points = clusters[cluster_key]
+    cluster_data = {k: data_dict[k] for k in cluster_points}
+    x = [item[0] for item in cluster_data.values()]
+    y = [item[1] for item in cluster_data.values()]
+    customer_ids = list(cluster_data.keys())
+    hover_text = [ f'Customer ID: {customer_id}<br>Count: {len(cluster_data)}<br>RFM: {df.loc[df["Customer ID"] == customer_id, "RFM"].values[0]}<br>Segment: {df.loc[df["Customer ID"] == customer_id, "check_segment"].values[0]}' for customer_id in customer_ids]
+    fig.add_trace(go.Scatter(x=x, y=y, mode='markers', marker=dict(size=5, opacity=0.7, color=colormap[i % len(colormap)]), hoverinfo='text', text=hover_text, name=f'Cluster {i} Points'))
+  fig.update_layout(xaxis_title='Principal Component 0', yaxis_title='Principal Component 1', title='K-Means Clustering')
+  fig.show()
+
+plot_clusters_2d(cluster_data_dict, centroids, clusters)
+
+df['Cluster Label'] = -1 
+
+for ik in range(num_clusters):
+  df.loc[df['Customer ID'].isin(clusters[f'cluster {ik} CustomerID']), 'Cluster Label'] = ik
+
+print(df.head())
+result = df.groupby(['Cluster Label', 'check_segment'])['Customer ID'].count().reset_index(name='Count')
+print(result)
+#result[result['Cluster Label']==1]
+#df[df['Cluster Label'] == 1].describe()
+
+sns.displot(df['Recency'])
+plt.show()
+df.head(n=2)
+
+x = df[df['Recency'] < 320]
+x['check_segment'].unique()
+
+
+
