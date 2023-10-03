@@ -796,36 +796,36 @@ max_iterations = 20
 prev_centroids = copy.deepcopy(centroids)
 
 for iteration in range(max_iterations):
-    # Initialize clusters at the beginning of each iteration
-    clusters = {f'cluster {ik} CustomerID': [] for ik in range(num_clusters)}
+  # Initialize clusters at the beginning of each iteration
+  clusters = {f'cluster {ik} CustomerID': [] for ik in range(num_clusters)}
 
-    # Calculate distances
-    distances = {f'centroid {ik} distance': {user: sum([(centroids[f'cluster {ik} Centroids'][feature] - cluster_data_dict[user][feature])**2 for feature in range(num_features_per_user)]) for user in cluster_data_dict} for ik in range(num_clusters)}
+  # Calculate distances
+  distances = {f'centroid {ik} distance': {user: sum([(centroids[f'cluster {ik} Centroids'][feature] - cluster_data_dict[user][feature])**2 for feature in range(num_features_per_user)]) for user in cluster_data_dict} for ik in range(num_clusters)}
 
-    # Assign each user to the nearest centroid
-    for user in cluster_data_dict:
-        temp_distance = [distances[f'centroid {ik} distance'][user] for ik in range(num_clusters)]
-        clusters[f'cluster {temp_distance.index(min(temp_distance))} CustomerID'].append(user)
+  # Assign each user to the nearest centroid
+  for user in cluster_data_dict:
+    temp_distance = [distances[f'centroid {ik} distance'][user] for ik in range(num_clusters)]
+    clusters[f'cluster {temp_distance.index(min(temp_distance))} CustomerID'].append(user)
 
-    # Update centroids
-    for ik in range(num_clusters):
-        mean_value = [0] * num_features_per_user
-        cluster_size = len(clusters[f'cluster {ik} CustomerID'])
-        if cluster_size != 0:
-            for user in clusters[f'cluster {ik} CustomerID']:
-                mean_value = [mean_value[feature] + cluster_data_dict[user][feature] for feature in range(num_features_per_user)]
-            centroids[f'cluster {ik} Centroids'] = [mean_value[feature] / cluster_size for feature in range(num_features_per_user)]
-        else:
-            # If a cluster is empty, assign a random point as its centroid
-            centroids[f'cluster {ik} Centroids'] = cluster_data_dict[random.choice(list(cluster_data_dict.keys()))]
+  # Update centroids
+  for ik in range(num_clusters):
+    mean_value = [0] * num_features_per_user
+    cluster_size = len(clusters[f'cluster {ik} CustomerID'])
+    if cluster_size != 0:
+      for user in clusters[f'cluster {ik} CustomerID']:
+        mean_value = [mean_value[feature] + cluster_data_dict[user][feature] for feature in range(num_features_per_user)]
+      centroids[f'cluster {ik} Centroids'] = [mean_value[feature] / cluster_size for feature in range(num_features_per_user)]
+    else:
+          # If a cluster is empty, assign a random point as its centroid
+      centroids[f'cluster {ik} Centroids'] = cluster_data_dict[random.choice(list(cluster_data_dict.keys()))]
 
-    # Check for convergence
-    if prev_centroids == centroids:
-        print(f"Converged at iteration {iteration + 1}")
-        break
+  # Check for convergence
+  if prev_centroids == centroids:
+    print(f"Converged at iteration {iteration + 1}")
+    break
 
-    # Update previous centroids for the next iteration
-    prev_centroids = copy.deepcopy(centroids)
+  # Update previous centroids for the next iteration
+  prev_centroids = copy.deepcopy(centroids)
 
     #print(f"Iteration {iteration + 1}: Clusters = {clusters}")
 
