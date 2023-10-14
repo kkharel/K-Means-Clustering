@@ -203,3 +203,235 @@ RFM Analysis of Customers
 # simplifying the development of targeted strategies. 
 # However, it's crucial to strike a balance, as some diversity 
 # (like in Cluster 4) might be desirable for capturing a broader range of customer behaviors. 
+
+
+
+
+
+bash: /c/Users/kkhar/conda.sh: No such file or directory
+
+kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Documents (master)
+$
+$ git push
+$ git commit -m"Final Result of the K Means Algorithm"
+$ git add .
+$ cd C:/Users/kkhar/OneDrive/Desktop/K-Means-Clustering
+
+kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
+$
+$ python
+$ python K-Means.py
+Loading Excel File...
+Sheet Names: ['Year 2009-2010', 'Year 2010-2011']
+Number of Sheets: 2
+Cleaning Data...
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 1067371 entries, 0 to 1067370
+Data columns (total 8 columns):
+ #   Column       Non-Null Count    Dtype
+---  ------       --------------    -----
+ 0   Invoice      1067371 non-null  object
+ 1   StockCode    1067371 non-null  object
+ 2   Description  1062989 non-null  object
+ 3   Quantity     1067371 non-null  int64
+ 4   InvoiceDate  1067371 non-null  datetime64[ns]
+ 5   Price        1067371 non-null  float64
+ 6   Customer ID  824364 non-null   float64
+ 7   Country      1067371 non-null  object
+dtypes: datetime64[ns](1), float64(2), int64(1), object(4)
+memory usage: 65.1+ MB
+None
+Count of Null Rows before Removal:  243007
+Count of Nulls in Columns after Removal:  Invoice        0
+StockCode      0
+Description    0
+Quantity       0
+InvoiceDate    0
+Price          0
+Customer ID    0
+Country        0
+dtype: int64
+Number of Records after Null Removal:  824364
+Number of records before removing duplicates:  Invoice        824364
+StockCode      824364
+Description    824364
+Quantity       824364
+InvoiceDate    824364
+Price          824364
+Customer ID    824364
+Country        824364
+dtype: int64
+Number of records after removing duplicates:  Invoice        797885
+StockCode      797885
+Description    797885
+Quantity       797885
+InvoiceDate    797885
+Price          797885
+Customer ID    797885
+Country        797885
+dtype: int64
+Summary of Data:              Quantity                    InvoiceDate          Price  \
+count  797885.000000                         797885  797885.000000
+mean       12.602980  2011-01-02 13:17:34.141160704       3.702732
+min    -80995.000000            2009-12-01 07:45:00       0.000000
+25%         2.000000            2010-07-02 09:47:00       1.250000
+50%         5.000000            2010-12-02 12:33:00       1.950000
+75%        12.000000            2011-07-31 15:50:00       3.750000
+max     80995.000000            2011-12-09 12:50:00   38970.000000
+std       191.670371                            NaN      71.392549
+
+         Customer ID
+count  797885.000000
+mean    15313.062777
+min     12346.000000
+25%     13964.000000
+50%     15228.000000
+75%     16788.000000
+max     18287.000000
+std      1696.466663
+Removing Invoices that start with letters...
+Number of records after removing invoices starting with letters:  779495
+Removing prices that are negative or zero...
+Number of records after removing negatively priced products:  779425
+Removing Negative Quantities...
+Number of records after removing Negative Quantity products:  779425
+Summary of Data:             Quantity                    InvoiceDate          Price  \
+count  779425.000000                         779425  779425.000000
+mean       13.489370  2011-01-03 01:44:42.593475584       3.218488
+min         1.000000            2009-12-01 07:45:00       0.001000
+25%         2.000000            2010-07-02 14:39:00       1.250000
+50%         6.000000            2010-12-02 14:09:00       1.950000
+75%        12.000000            2011-08-01 13:44:00       3.750000
+max     80995.000000            2011-12-09 12:50:00   10953.500000
+std       145.855814                            NaN      29.676140
+
+         Customer ID
+count  779425.000000
+mean    15320.360461
+min     12346.000000
+25%     13971.000000
+50%     15247.000000
+75%     16794.000000
+max     18287.000000
+std      1695.692775
+Calculating Recency, Frequency, Monetary Values and Merging Data...
+Calculating RFM scores based on percentiles...
+Single RFM Metric...
+Plotting Data Distribution...
+Checking Skewness and Kurtosis...
+Skewness:
+Kurtosis:
+Transforming Variables (Power & Log)...
+Plotting Transformed KDE...
+Boxplot of Transformed Variables...
+Replacing Outliers with Bounds...
+Boxplot of Transformed Variables After Outlier Handling...
+Separating bimodality of Recency using GMM...
+Min-Max Scaling Variables
+Comparision of Skewness and Kurtosis among variables...
+Original Variables Skewness...
+Skewness:
+Transformed Variables Skewness...
+Skewness:
+Scaled Variables Skewness...
+Skewness:
+Original Variables Kurtosis...
+Kurtosis:
+Transformed Variables Kurtosis...
+Kurtosis:
+Scaled Variables Kurtosis...
+Kurtosis:
+Plotting KDE of transformed variables...
+Mapping Scores to Segments...
+Converting Segments into dummy variables...
+Selected features for KNN algorithm...
+['Customer ID', 'scaled_RFM', 'bimodal_Recency', 'scaled_Recency', 'scaled_Frequency', 'scaled_Monetary', 'segment_A
+boutToSleep', 'segment_AtRisk', 'segment_CannotLoseThem', 'segment_Champions', 'segment_Hibernating', 'segment_Lost'
+, 'segment_LoyalCustomers', 'segment_NeedAttention', 'segment_PotentialLoyalist', 'segment_Promising', 'segment_Rece
+ntCustomers']
+Plotting Correlation Heatmap...
+Applying PCA to remove correlation among features...
+Creating dataframe to store the principal components...
+Converting dataframe to dictionary of values...
+First 3 records of dictionary...
+12346.0: [-0.4755740173852797, -0.39687357555408115, -0.053550049612977206, 0.6290246109423404, -0.14622237740762065
+, -0.4831512148375629, -0.17453574993464746, 0.374691436097668, -0.3808253206643813]
+12347.0: [1.0614989792265237, -0.4288626900216515, 0.3036127204476069, 0.052540525609238255, 0.08954268758778265, 0.
+001741108308870603, -0.01291866834532743, -0.04785137742310192, 0.24865899420848558]
+12348.0: [0.2635960027247667, 0.4043083407063475, -0.1705938582702758, -0.06460244895084082, -0.04269566595068019, -
+0.2162098825461374, 0.8498665971148607, -0.2605029859061856, -0.48753521396875876]
+Sanity check of data...
+Number of keys: 5878
+Number of values: 5878
+Creating check segment variable to evaluate the performance of algorithm...
+Running K-Means Algorithm with Euclidean distance metric...
+Converged at iteration 8
+Sanity Check...
+Number of values: 1273
+Plotting Clusters...
+Model Evaluation...
+    Cluster Label      check_segment  Count
+0               0        Hibernating    241
+1               1          Champions   1273
+2               2        Hibernating    276
+3               3       AboutToSleep    543
+4               4      NeedAttention    198
+5               4  PotentialLoyalist    435
+6               4          Promising    138
+7               4    RecentCustomers    356
+8               5             AtRisk    230
+9               6     LoyalCustomers    562
+10              7               Lost    795
+11              8     CannotLoseThem    139
+12              8      NeedAttention    215
+13              8  PotentialLoyalist      8
+14              9             AtRisk    219
+15             10        Hibernating    250
+Silhouette Score: 0.5739293624937142
+Inertia: 1317.044643949626
+Explained Variance Ratio: [0.36194616 0.11035282 0.10355967 0.08092097 0.07298444 0.0619178
+ 0.05206921 0.0494782  0.04511895]
+check_segment  AboutToSleep  AtRisk  CannotLoseThem  Champions  Hibernating  \
+Cluster Label
+0                         0       0               0          0          241
+1                         0       0               0       1273            0
+2                         0       0               0          0          276
+3                       543       0               0          0            0
+4                         0       0               0          0            0
+5                         0     230               0          0            0
+6                         0       0               0          0            0
+7                         0       0               0          0            0
+8                         0       0             139          0            0
+9                         0     219               0          0            0
+10                        0       0               0          0          250
+
+check_segment  Lost  LoyalCustomers  NeedAttention  PotentialLoyalist  \
+Cluster Label
+0                 0               0              0                  0
+1                 0               0              0                  0
+2                 0               0              0                  0
+3                 0               0              0                  0
+4                 0               0            198                435
+5                 0               0              0                  0
+6                 0             562              0                  0
+7               795               0              0                  0
+8                 0               0            215                  8
+9                 0               0              0                  0
+10                0               0              0                  0
+
+check_segment  Promising  RecentCustomers
+Cluster Label
+0                      0                0
+1                      0                0
+2                      0                0
+3                      0                0
+4                    138              356
+5                      0                0
+6                      0                0
+7                      0                0
+8                      0                0
+9                      0                0
+10                     0                0
+
+kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
+$
