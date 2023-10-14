@@ -1,4 +1,6 @@
 # K-Means-Clustering
+
+[Link to Interactive Plot](https://github.com/kkharel/K-Means-Clustering/blob/main/Plots/clusters.html)
 Use Cases ex - Market Segmentation, Social Network Analysis, Search result groupings, Medical imaging, image segmentation, anomaly detection, Recommendation systems etc...
 K means complexity O(n).
 Types of Clustering: Centroid Based Clustering, Density Based Clustering, Distribution Based Clustering, Hierarchical Clustering
