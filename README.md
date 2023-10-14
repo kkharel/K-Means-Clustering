@@ -205,6 +205,7 @@ RFM Analysis of Customers
 # However, it's crucial to strike a balance, as some diversity 
 # (like in Cluster 4) might be desirable for capturing a broader range of customer behaviors. 
 
+[Link to Plotly Plot](https://kkharel.github.io/K-Means-Clustering/index.html)
 
 
 
@@ -436,7 +437,4 @@ Cluster Label
 
 kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
 $
-
-
-<iframe width="800" height="600" src="https://kkharel.github.io/K-Means-Clustering/index.html"></iframe>
 
