@@ -1,8 +1,5 @@
 # K-Means-Clustering
 
-<iframe width="800" height="600" src="https://kkharel.github.io/K-Means-Clustering/"></iframe>
-
-
 Use Cases ex - Market Segmentation, Social Network Analysis, Search result groupings, Medical imaging, image segmentation, anomaly detection, Recommendation systems etc...
 K means complexity O(n).
 Types of Clustering: Centroid Based Clustering, Density Based Clustering, Distribution Based Clustering, Hierarchical Clustering
@@ -439,3 +436,7 @@ Cluster Label
 
 kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
 $
+
+
+<iframe width="800" height="600" src="https://kkharel.github.io/K-Means-Clustering/index.html"></iframe>
+
