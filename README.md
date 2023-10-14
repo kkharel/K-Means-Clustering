@@ -153,3 +153,53 @@ RFM Analysis of Customers
 
 # Now, we visualize the result of the clustering algorithm
 
+# Model Evaluation
+
+# Silhouette Score( between -1 and 1) - Measures how well separated the clusters are where
+# higher score represents well separated clusters.
+
+# Inertia (within cluster sum of squares): Measures how compact the clusters are. Lower
+# values are better
+
+# From inertia silhouette score, K-means clustering has produced clusters that are both 
+# compact (low inertia) and well-separated (high silhouette score).
+# This combination indicates that the algorithm has effectively grouped similar data points 
+# together while keeping the clusters distinct from each other.
+
+# Clusters 3, 6, and 8 appears to have a significant number of instances,
+# suggesting they may represent distinct and well-defined customer groups.
+# Clusters 3, 6, and 8 have clear dominant segments 
+# ('AboutToSleep', 'LoyalCustomers', and 'CannotLoseThem', respectively), 
+# indicating a focused and specific customer profile for these clusters.
+
+# Clusters 0, 1, 2, 4, 5, 7, 9, and 10, having few or no instances in certain segments, 
+# suggest that these clusters are more homogenous with respect to the 
+# segmentation variable. This can be advantageous for targeted strategies since the 
+# behavior of customers within these clusters is more uniform.
+
+# Cluster 4 still stands out as having a diverse set of segments 
+# ('PotentialLoyalist', 'NeedAttention', 'Promising', 'RecentCustomers'). 
+# This diversity may indicate a cluster with varied customer behaviors, 
+# and strategies for this cluster might need to be more flexible.
+
+### Recommendations:
+
+# Targeted Strategies
+
+# For clusters with lack of variety, targeted strategies can be more straightforward 
+# and tailored to the dominant segment. 
+# For example, Cluster 6 ('LoyalCustomers') might be approached with loyalty reward programs.
+
+# Clusters with less variety may be easier to understand and manage.
+# For instance, if Cluster 8 ('CannotLoseThem') primarily consists of customers 
+# who are reluctant to switch brands, marketing efforts can focus on maintaining 
+# their satisfaction.
+
+# Given the diversity in Cluster 4, a more nuanced and adaptable strategy may be needed. 
+# This cluster might benefit from marketing campaigns that can appeal to different customer 
+# preferences.
+
+# In summary, the lack of variety in certain clusters is advantageous for segmentation, 
+# simplifying the development of targeted strategies. 
+# However, it's crucial to strike a balance, as some diversity 
+# (like in Cluster 4) might be desirable for capturing a broader range of customer behaviors. 
