@@ -10,9 +10,6 @@ import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.metrics import silhouette_score
 
-
-os.chdir("C:/Users/kkhar/OneDrive/Desktop/K-Means-Clustering")
-
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", None)
 
