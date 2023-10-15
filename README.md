@@ -112,8 +112,15 @@ Now, we look at the distribution of Recency, Frequency and Monetary values of cu
 ```bash
 Plotting Data Distribution...
 ```
+![distribution_plot](https://github.com/kkharel/K-Means-Clustering/assets/59852121/71ec924f-71cb-4df6-81bb-faedbd0b80ee)
 
-Plotting Data Distribution...
+From the plot, we can see that all the data are right-skewed(positive) and obviously not symmetric.
+
+Skewness is a statistical measure that describes the asymmetry of a probability distribution. It tells us whether the data is concentrated more on one side of the mean than the other. A skewness value can be positive, negative, or zero: A positive skewness indicates that the right tail of the distribution is longer or fatter than the left, and the bulk of the values lie to the left of the mean. A negative skewness indicates that the left tail is longer or fatter than the right, and the bulk of the values lie to the right of the mean. A skewness value of zero means that the distribution on both sides of the mean is symmetrical.
+
+Kurtosis is a statistical measure that describes the distribution of data in terms of the shape of its tails in relation to the normal distribution. Specifically, it indicates whether the data are heavy-tailed or light-tailed relative to a normal distribution. The kurtosis values can be classified into three types: Mesokurtic (Kurtosis = 0): The distribution has tails that are similar to the normal distribution. Leptokurtic (Kurtosis > 0): The distribution has heavier tails than the normal distribution, indicating more extreme values. Platykurtic (Kurtosis < 0): The distribution has lighter tails than the normal distribution, indicating fewer extreme values.
+
+```bash
 Checking Skewness and Kurtosis...
 Skewness:
 Recency       0.887198
@@ -125,8 +132,27 @@ Recency       -0.476970
 Frequency    523.518914
 Monetary     830.167745
 dtype: float64
+```
+From the skewness, we can see that all three variables have a positie skewness, suggesting that the distribution are right-skewed implying there are likely some extreme values (outliers) on the higher end of the distribution and majority of the values are concentrated on the lower end of the distribution. It could mean that there are few customers who have very recent transactions, highly frequent and/or have large monetary amounts while the majority of customers have lower values for these variables.
+
+From the kurtosis, we can see that for Recency, the negative kurtosis value suggests that the distribution has lighter tails than a normal distribution, indicating fewer extreme values. For Frequency and Monetary, the positive kurtosis values indicate that the distributions have heavier tails than a normal distribution, suggesting more extreme values. This could imply that there are some customers with very high transaction frequency and monetary amounts, leading to the heavier tails in these distributions. In summary: Recency: Lighter tails (Platykurtic) Frequency and Monetary: Heavier tails (Leptokurtic)
+
+The k-means algorithm is based on the mean of data points within clusters and its performance can be affected by the distribution of data. K means makes the assumption that clusters are spherical and equally sized, and it tries to minimize the variance within clusters which makes this algorithm sensitive to scaling and shape of the 
+clusters.
+
+Hence, we transform and scale the variables. We apply power transformation to Recency variable and log transformation to frequency and monetary variable.
+
+```bash
 Transforming Variables (Power & Log)...
+```
+Once, we apply transformation to the variables, lets look at the kde plot.
+
+```bash
 Plotting Transformed KDE...
+```
+
+From looking at the kde plot, we can see that Frequency and Monetary closely follows normal distribution as well as Recency but Recency exhibits bimodality which we need to handle differently.
+
 Boxplot of Transformed Variables...
 Replacing Outliers with Bounds...
 Boxplot of Transformed Variables After Outlier Handling...
@@ -263,67 +289,6 @@ Cluster Label
 
 kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
 $
-# Check the skewness of data
-
-# Skewness is a statistical measure that describes the asymmetry of a probability distribution. 
-# It tells us whether the data is concentrated more on one side of the mean than the other.
-# A skewness value can be positive, negative, or zero:
-# A positive skewness indicates that the right tail of the distribution is longer or fatter 
-# than the left, and the bulk of the values lie to the left of the mean.
-# A negative skewness indicates that the left tail is longer or fatter than the right, 
-# and the bulk of the values lie to the right of the mean.
-# A skewness value of zero means that the distribution on both sides of the mean is symmetrical.
-
-# From the skewness, we can see that all three variables have a positie skewness, suggesting
-# that the distribution are right-skewed implying there are likely some extreme values (outliers)
-# on the higher end of the distribution and majority of the values are concentrated on the lower
-# end of the distribution. It could mean that there are few customers who have very recent
-# transactions, highly frequent and/or have large monetary amounts while the majority of
-# customers have lower values for these variables
-
-
-# Kurtosis is a statistical measure that describes the distribution of data in terms of 
-# the shape of its tails in relation to the normal distribution. 
-# Specifically, it indicates whether the data are heavy-tailed or light-tailed 
-# relative to a normal distribution.
-
-# The kurtosis values can be classified into three types:
-
-# Mesokurtic (Kurtosis = 0): 
-# The distribution has tails that are similar to the normal distribution.
-
-# Leptokurtic (Kurtosis > 0): 
-# The distribution has heavier tails than the normal distribution, indicating more extreme values.
-
-# Platykurtic (Kurtosis < 0): 
-# The distribution has lighter tails than the normal distribution, indicating fewer extreme values.
-
-# From our results, we can see that
-
-# For Recency, the negative kurtosis value suggests that the distribution has lighter 
-# tails than a normal distribution, indicating fewer extreme values.
-
-# For Frequency and Monetary, the positive kurtosis values indicate that the distributions 
-# have heavier tails than a normal distribution, suggesting more extreme values. 
-# This could imply that there are some customers with very high transaction 
-# frequency and monetary amounts, leading to the heavier tails in these distributions.
-
-# In summary:
-# Recency: Lighter tails (Platykurtic)
-# Frequency and Monetary: Heavier tails (Leptokurtic)
-
-# The k-means algorithm is based on the mean of data points within clusters and its
-# performance can be affected by the distribution of data. K means makes the assumption
-# that clusters are spherical and equally sized, and it tries to minimize the variance
-# within clusters which makes this algorithm sensitive to scaling and shape of the 
-# clusters.
-
-# Hence, we transform and scale the variables. We apply power transformation to Recency
-# variable and log transformation to frequency and monetary variable.
-
-
-# From looking at the kde plot, we can see that Frequency and Monetary closely follows
-# normal distribution as well as Recency but Recency exhibits bimodality.
 
 # Now, let's look at boxplot of above transformed variables
 
