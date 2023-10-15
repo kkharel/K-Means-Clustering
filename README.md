@@ -153,11 +153,38 @@ Plotting Transformed KDE...
 
 From looking at the kde plot, we can see that Frequency and Monetary closely follows normal distribution as well as Recency but Recency exhibits bimodality which we need to handle differently.
 
+Lets visualize the boxplot for transformed vairables before applying outlier handling
+```bash
 Boxplot of Transformed Variables...
+```
+From the boxplot of tranformed variables, it is evident that Frequency and Monetary have extreme values. There are various ways to handle the outliers, but we will use interquartile range method to replace the extreme values with bounds.
+
+```bash
 Replacing Outliers with Bounds...
+```
+
+Let's visualize the data with boxplot to see whether there are outliers present in the data or not after outlier handling.
+
+```bash
 Boxplot of Transformed Variables After Outlier Handling...
+```
+
+The dataset looks good so far. Previously, we saw that power transforming the Recency exhibits bimodal density. We will apply the GMM model to separate them and scale each one afterwards I will create a new variable recency_bimodal to represent two distinct peaks in recency variable using gaussian mixture model.
+Another caveat When working with days variables is that we need to make sure whether days should be represented as continuous variable or discrete variable. See below for variable treatment. Continuous: If "number of days" refers to a continuous quantity, such as the time elapsed between two events, it is considered continuous. For example, the time duration between two timestamps (measured with high precision) can be treated as a continuous variable. Discrete: On the other hand, if "number of days" is used to represent a count or a number of whole days (e.g., the number of days until an event occurs), then it is discrete. Discrete variables take on distinct, separate values and do not have values between them.
+
+```bash
 Separating bimodality of Recency using GMM...
-Min-Max Scaling Variables
+```
+
+Since, K means algorithm is distance based and is sensitive to larger and smaller values of variables, we scale them to bring all variables to same scale. Pay close attention in the code on how we scale the recency variable. The formula for scaling is as follows: x_scaled = x - x_min/x_max - x_min
+
+```bash
+Min-Max Scaling Variables...
+```
+
+After scaling the variables, let's compare the skewness and kurtosis between original variables, transformed variables and scaled variables. 
+
+```bash
 Comparision of Skewness and Kurtosis among variables...
 Original Variables Skewness...
 Skewness:
@@ -195,6 +222,13 @@ scaled_Recency     -0.914912
 scaled_Frequency   -0.204255
 scaled_Monetary    -0.145086
 dtype: float64
+```
+
+The transformations and scaling have helped in reducing skewness, moving the distributions of the variables closer to symmetry. All the skewness values are relatively close to zero, with scaled_Recency being the most negatively skewed (-0.25), scaled_Frequency being close to zero (-0.03), and scaled_Monetary being slightly positively skewed (0.27). Generally, skewness values within the range of -0.5 to 0.5 are considered acceptable for assuming normality.
+
+The transformations (power and logarithmic) and scaling have generally resulted in distributions with lighter tails compared to the original variables. Negative kurtosis values suggest a distribution with fewer extreme values or outliers than a normal distribution. The kurtosis values are also within a reasonable range. Scaled_Recency and Scaled_Frequency both have negative kurtosis values, indicating slightly platykurtic distributions, but the magnitudes are not extreme. Scaled_Monetary has a positive kurtosis value, indicating a slightly leptokurtic distribution, but again, the magnitude is not highly pronounced.
+
+
 Plotting KDE of transformed variables...
 Mapping Scores to Segments...
 Converting Segments into dummy variables...
@@ -290,56 +324,6 @@ Cluster Label
 kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
 $
 
-# Now, let's look at boxplot of above transformed variables
-
-# From the boxplot of tranformed variables, it is evident that Frequency and Monetary
-# have extreme values. There are various ways to handle the outliers, but we will use
-# interquartile range method to replace the extreme values with bounds.
-
-# Previously, we saw that power transforming the Recency exhibits bimodal density. We will
-# apply the GMM model to separate them and scale each one afterwards
-# I will create a new variable recency_bimodal to represent two distinct peaks in recency variable using
-# gaussian mixture model.
-# When working with days variables, we need to make sure whether days should be represented
-# as continuous variable or discrete variable. See below for variable treatment.
-
-# Continuous: If "number of days" refers to a continuous quantity, such as the time 
-# elapsed between two events, it is considered continuous. 
-# For example, the time duration between two timestamps (measured with high precision) 
-# can be treated as a continuous variable.
-
-# Discrete: On the other hand, if "number of days" is used to represent a count or a number
-# of whole days (e.g., the number of days until an event occurs), 
-# then it is discrete. Discrete variables take on distinct, 
-# separate values and do not have values between them.
-
-# x_scaled = x - x_min/x_max - x_min
-# Now we will scale our tranformed variables to same scale for knn algorithm
-
-# Scaling Recency, Frequency and Monetary Values. Notice on how I tranformed the 
-# recency variable to take into account the bimodal nature.
-
-# Now, let's compare the skewness and kurtosis between original variables, transformed variables
-# and scaled variables
-
-# The transformations and scaling have helped in reducing skewness, moving the 
-# distributions of the variables closer to symmetry.
-# All the skewness values are relatively close to zero, with scaled_Recency 
-# being the most negatively skewed (-0.25), scaled_Frequency being close to zero (-0.03), 
-# and scaled_Monetary being slightly positively skewed (0.27). 
-# Generally, skewness values within the range of -0.5 to 0.5 are considered 
-# acceptable for assuming normality.
-
-#Kurtosis:
-# The transformations (power and logarithmic) and scaling have generally resulted in 
-# distributions with lighter tails compared to the original variables. 
-# Negative kurtosis values suggest a distribution with fewer extreme values or 
-# outliers than a normal distribution.
-#The kurtosis values are also within a reasonable range. 
-# scaled_Recency and scaled_Frequency both have negative kurtosis values, 
-# indicating slightly platykurtic distributions, but the magnitudes are not extreme. 
-# scaled_Monetary has a positive kurtosis value, indicating a slightly leptokurtic distribution, 
-# but again, the magnitude is not highly pronounced.
 
 # Now I will map the RFM scores to its segments so that we can assess how well
 # did the knn algorithm learned the structure and relationship of the data.
