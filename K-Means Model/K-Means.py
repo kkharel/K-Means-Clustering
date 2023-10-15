@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -9,6 +8,9 @@ from sklearn.decomposition import PCA
 import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.metrics import silhouette_score
+import random
+import copy
+
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", None)
@@ -379,12 +381,7 @@ def correlation_heatmap(dataframe, save_path='correlation_plot.jpg'):
 #plt.savefig('elbow_plot.jpg', format = 'jpg', dpi = 300, bbox_inches = 'tight')
 #plt.show()
 
-
 # Algorithm
-
-import random
-import copy
-
 def k_means(cluster_data_dict, num_clusters=11, max_iterations=20):
   # Selecting random initial centroids
   random.seed(42)
