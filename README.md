@@ -150,6 +150,7 @@ Once, we apply transformation to the variables, lets look at the kde plot.
 ```bash
 Plotting Transformed KDE...
 ```
+![transformed_kde](https://github.com/kkharel/K-Means-Clustering/assets/59852121/ebfa5bf4-4338-48da-b2dc-93cd87e2e195)
 
 From looking at the kde plot, we can see that Frequency and Monetary closely follows normal distribution as well as Recency but Recency exhibits bimodality which we need to handle differently.
 
@@ -157,6 +158,8 @@ Lets visualize the boxplot for transformed vairables before applying outlier han
 ```bash
 Boxplot of Transformed Variables...
 ```
+![box_plot_transformed_before](https://github.com/kkharel/K-Means-Clustering/assets/59852121/d69ead8b-4a85-4e74-a343-bb1c0eced258)
+
 From the boxplot of tranformed variables, it is evident that Frequency and Monetary have extreme values. There are various ways to handle the outliers, but we will use interquartile range method to replace the extreme values with bounds.
 
 ```bash
@@ -168,6 +171,8 @@ Let's visualize the data with boxplot to see whether there are outliers present 
 ```bash
 Boxplot of Transformed Variables After Outlier Handling...
 ```
+
+![box_plot_transformed](https://github.com/kkharel/K-Means-Clustering/assets/59852121/7377d0cb-cec4-402a-8e76-6c709356c09a)
 
 The dataset looks good so far. Previously, we saw that power transforming the Recency exhibits bimodal density. We will apply the GMM model to separate them and scale each one afterwards I will create a new variable recency_bimodal to represent two distinct peaks in recency variable using gaussian mixture model.
 Another caveat When working with days variables is that we need to make sure whether days should be represented as continuous variable or discrete variable. See below for variable treatment. Continuous: If "number of days" refers to a continuous quantity, such as the time elapsed between two events, it is considered continuous. For example, the time duration between two timestamps (measured with high precision) can be treated as a continuous variable. Discrete: On the other hand, if "number of days" is used to represent a count or a number of whole days (e.g., the number of days until an event occurs), then it is discrete. Discrete variables take on distinct, separate values and do not have values between them.
@@ -234,6 +239,8 @@ Now, we visualize the final density of the variables that we are going to use fo
 Plotting KDE of transformed variables...
 ```
 
+![transformed_kde_2](https://github.com/kkharel/K-Means-Clustering/assets/59852121/b102e96f-a97a-4a87-80a5-dad325e69003)
+
 Now I will map the RFM scores to its segments to generate new features and to evaluate later on how well did the knn algorithm learned the structure and relationship of the data.
 
 ```bash
@@ -261,6 +268,8 @@ Let's look at the correlation matrix of the features.
 ```bash
 Plotting Correlation Heatmap...
 ```
+
+![correlation_plot](https://github.com/kkharel/K-Means-Clustering/assets/59852121/af7c38b2-5a7c-45b6-b23d-1f4c899d7a3e)
 
 From the correlation plot, we can see that some features are highly correlated, we will capture the most important patterns in the data and avoid redundancy. Since the algorithm is sensitive to scale and correlation of features, PCA may help us improve the performance of the model. We apply pca to our features and keep 90% of variability in the data
 
@@ -398,6 +407,8 @@ Clusters with less variety may be easier to understand and manage. For instance,
 Given the diversity in Cluster 4, a more nuanced and adaptable strategy may be needed. This cluster might benefit from marketing campaigns that can appeal to different customer preferences.
 
 In summary, the lack of variety in certain clusters is advantageous for segmentation, simplifying the development of targeted strategies. However, it's crucial to strike a balance, as some diversity (like in Cluster 4) might be desirable for capturing a broader range of customer behaviors. 
+
+Dataset Citation:
 
 @misc{misc_online_retail_ii_502,
   author       = {Chen,Daqing},
