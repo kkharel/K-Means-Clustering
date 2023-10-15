@@ -228,17 +228,48 @@ The transformations and scaling have helped in reducing skewness, moving the dis
 
 The transformations (power and logarithmic) and scaling have generally resulted in distributions with lighter tails compared to the original variables. Negative kurtosis values suggest a distribution with fewer extreme values or outliers than a normal distribution. The kurtosis values are also within a reasonable range. Scaled_Recency and Scaled_Frequency both have negative kurtosis values, indicating slightly platykurtic distributions, but the magnitudes are not extreme. Scaled_Monetary has a positive kurtosis value, indicating a slightly leptokurtic distribution, but again, the magnitude is not highly pronounced.
 
+Now, we visualize the final density of the variables that we are going to use for KNN algorithm.
 
+```bash
 Plotting KDE of transformed variables...
+```
+
+Now I will map the RFM scores to its segments to generate new features and to evaluate later on how well did the knn algorithm learned the structure and relationship of the data.
+
+```bash
 Mapping Scores to Segments...
+```
+
+The mapping of scores are in the code itself, please take a look at it to understand the mapping structure. Once we map the scores to the segments, we one-hot encode te segments and use it as features for our k means algorithm.
+
+```bash
 Converting Segments into dummy variables...
+```
+
+Most of the heavy lifting is done besides writing algorithm from the scratch. Above section loads the data, cleans the data, transforms the data and explores different visualizations. Now, we select the features manually that goes into the k means algorithm to cluster the segments.
+
+```bash
 Selected features for KNN algorithm...
 ['Customer ID', 'scaled_RFM', 'bimodal_Recency', 'scaled_Recency', 'scaled_Frequency', 'scaled_Monetary', 'segment_A
 boutToSleep', 'segment_AtRisk', 'segment_CannotLoseThem', 'segment_Champions', 'segment_Hibernating', 'segment_Lost'
 , 'segment_LoyalCustomers', 'segment_NeedAttention', 'segment_PotentialLoyalist', 'segment_Promising', 'segment_Rece
 ntCustomers']
+```
+
+Let's look at the correlation matrix of the features.
+
+```bash
 Plotting Correlation Heatmap...
+```
+
+From the correlation plot, we can see that some features are highly correlated, we will capture the most important patterns in the data and avoid redundancy. Since the algorithm is sensitive to scale and correlation of features, PCA may help us improve the performance of the model. We apply pca to our features and keep 90% of variability in the data
+
+```bash
 Applying PCA to remove correlation among features...
+```
+We will create a new dataframe to store the principal components after applying pca and then we will change the structure of the data to dictionary for the algorithm and check the first 3 records of the dataset and also perform Sanity Check so that we haven't make any mistakes so far.
+
+```bash
 Creating dataframe to store the principal components...
 Converting dataframe to dictionary of values...
 First 3 records of dictionary...
@@ -251,12 +282,40 @@ First 3 records of dictionary...
 Sanity check of data...
 Number of keys: 5878
 Number of values: 5878
+```
+
+To choose the optimal K value, we use an elbow method but we skip this for now since we know that we have 11 segments and we have defined it manually above. Not needed we have domain knowledge of 11 segments. In case, if we want to try this method as well, then code is present in the model as comments which will help us find the optimal k value. We create a copy of segment variable so that we can use it to evaluate the model performace during model evaluation step
+
+```bash
 Creating check segment variable to evaluate the performance of algorithm...
+```
+
+Running the k means algorithm with Euclidean distance metric. Notice how I have handled the case when there are no points assigned to clusters during first couple iterations.
+
+```
 Running K-Means Algorithm with Euclidean distance metric...
 Converged at iteration 8
-Sanity Check...
+```
+
+From the tableau dashboard, I know that there are 1268 champions in the dataset. So I try to sanity check the numbers to see the learning of the algorithm. The difference between the numbers is very miniscule and it comes from handling and capping the outliers above.
+
+```bash
+Sanity Check Champions...
 Number of values: 1273
+```
+
+Now, we visualize the result of the clustering algorithm. This is an interactive plot so we need to host this using html file. Please see the link below for final clustering using the algorithm.
+
+```bash
 Plotting Clusters...
+```
+
+[Link to Plotly Plot](https://kkharel.github.io/K-Means-Clustering/index.html)
+
+
+Finally we evaluate how well our model is doing by looking at various qualitative and quantitative methods and provide recommendation for business to make decisions.
+
+```bash
 Model Evaluation...
     Cluster Label      check_segment  Count
 0               0        Hibernating    241
@@ -320,94 +379,25 @@ Cluster Label
 8                      0                0
 9                      0                0
 10                     0                0
+```
 
-kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
-$
+Silhouette Score( between -1 and 1) - Measures how well separated the clusters are where higher score represents well separated clusters. Inertia (within cluster sum of squares): Measures how compact the clusters are. Lower values are better.
 
+From inertia silhouette score, K-means clustering has produced clusters that are both compact (low inertia) and well-separated (high silhouette score). This combination indicates that the algorithm has effectively grouped similar data points together while keeping the clusters distinct from each other.
 
-# Now I will map the RFM scores to its segments so that we can assess how well
-# did the knn algorithm learned the structure and relationship of the data.
+Clusters 3, 6, and 8 appears to have a significant number of instances, suggesting they may represent distinct and well-defined customer groups. Clusters 3, 6, and 8 have clear dominant segments ('AboutToSleep', 'LoyalCustomers', and 'CannotLoseThem', respectively), indicating a focused and specific customer profile for these clusters.
 
-# Mapping RFM scores to segments
+Clusters 0, 1, 2, 4, 5, 7, 9, and 10, having few or no instances in certain segments, suggest that these clusters are more homogenous with respect to the segmentation variable. This can be advantageous for targeted strategies since the behavior of customers within these clusters is more uniform.
 
-# Converting segment into dummy variables
+Cluster 4 still stands out as having a diverse set of segments ('PotentialLoyalist', 'NeedAttention', 'Promising', 'RecentCustomers'). This diversity may indicate a cluster with varied customer behaviors, and strategies for this cluster might need to be more flexible.
 
-# Our data is ready for knn algorithm. Now, we will select the variables that goes into
-# our algorithm
+The business recommendation we have is For clusters with lack of variety, targeted strategies can be more straightforward and tailored to the dominant segment. For example, Cluster 6 ('LoyalCustomers') might be approached with loyalty reward programs. 
 
-# Let's look at the correlation matrix of the features
+Clusters with less variety may be easier to understand and manage. For instance, if Cluster 8 ('CannotLoseThem') primarily consists of customers who are reluctant to switch brands, marketing efforts can focus on maintaining their satisfaction.
 
-# From the correlation plot, we can see that some features are highly correlated, 
-# we will capture the most important patterns in the data and avoid redundancy. 
-# Since the algorithm is sensitive to scale and correlation of features, 
-# PCA may help us improve the performance of the model.
+Given the diversity in Cluster 4, a more nuanced and adaptable strategy may be needed. This cluster might benefit from marketing campaigns that can appeal to different customer preferences.
 
-# We apply pca to our features and keep 90% of variability in the data
-
-# We will change the structure of the data to dictionary for the algorithm
-
-# checking the first 5 records of the dataset
-
-# Sanity Check
-
-# To choose the optimal K value, we use an elbow method but we skip this for now
-# since we know that we have 11 segments and we have defined it manually above
-# Not needed we have domain knowledge of 11 segments.
-# In case, if we want to try this method as well, then below code will help us
-# find the optimal k value
-
-# Now, we visualize the result of the clustering algorithm
-
-# Model Evaluation
-
-# Silhouette Score( between -1 and 1) - Measures how well separated the clusters are where
-# higher score represents well separated clusters.
-
-# Inertia (within cluster sum of squares): Measures how compact the clusters are. Lower
-# values are better
-
-# From inertia silhouette score, K-means clustering has produced clusters that are both 
-# compact (low inertia) and well-separated (high silhouette score).
-# This combination indicates that the algorithm has effectively grouped similar data points 
-# together while keeping the clusters distinct from each other.
-
-# Clusters 3, 6, and 8 appears to have a significant number of instances,
-# suggesting they may represent distinct and well-defined customer groups.
-# Clusters 3, 6, and 8 have clear dominant segments 
-# ('AboutToSleep', 'LoyalCustomers', and 'CannotLoseThem', respectively), 
-# indicating a focused and specific customer profile for these clusters.
-
-# Clusters 0, 1, 2, 4, 5, 7, 9, and 10, having few or no instances in certain segments, 
-# suggest that these clusters are more homogenous with respect to the 
-# segmentation variable. This can be advantageous for targeted strategies since the 
-# behavior of customers within these clusters is more uniform.
-
-# Cluster 4 still stands out as having a diverse set of segments 
-# ('PotentialLoyalist', 'NeedAttention', 'Promising', 'RecentCustomers'). 
-# This diversity may indicate a cluster with varied customer behaviors, 
-# and strategies for this cluster might need to be more flexible.
-
-### Recommendations:
-
-# Targeted Strategies
-
-# For clusters with lack of variety, targeted strategies can be more straightforward 
-# and tailored to the dominant segment. 
-# For example, Cluster 6 ('LoyalCustomers') might be approached with loyalty reward programs.
-
-# Clusters with less variety may be easier to understand and manage.
-# For instance, if Cluster 8 ('CannotLoseThem') primarily consists of customers 
-# who are reluctant to switch brands, marketing efforts can focus on maintaining 
-# their satisfaction.
-
-# Given the diversity in Cluster 4, a more nuanced and adaptable strategy may be needed. 
-# This cluster might benefit from marketing campaigns that can appeal to different customer 
-# preferences.
-
-# In summary, the lack of variety in certain clusters is advantageous for segmentation, 
-# simplifying the development of targeted strategies. 
-# However, it's crucial to strike a balance, as some diversity 
-# (like in Cluster 4) might be desirable for capturing a broader range of customer behaviors. 
+In summary, the lack of variety in certain clusters is advantageous for segmentation, simplifying the development of targeted strategies. However, it's crucial to strike a balance, as some diversity (like in Cluster 4) might be desirable for capturing a broader range of customer behaviors. 
 
 @misc{misc_online_retail_ii_502,
   author       = {Chen,Daqing},
@@ -416,5 +406,3 @@ $
   howpublished = {UCI Machine Learning Repository},
   note         = {{DOI}: https://doi.org/10.24432/C5CG6D}
 }
-[Link to Plotly Plot](https://kkharel.github.io/K-Means-Clustering/index.html)
-
