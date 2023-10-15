@@ -113,9 +113,18 @@ Now, we look at the distribution of Recency, Frequency and Monetary values of cu
 Plotting Data Distribution...
 ```
 
+Plotting Data Distribution...
 Checking Skewness and Kurtosis...
 Skewness:
+Recency       0.887198
+Frequency    18.162730
+Monetary     25.070190
+dtype: float64
 Kurtosis:
+Recency       -0.476970
+Frequency    523.518914
+Monetary     830.167745
+dtype: float64
 Transforming Variables (Power & Log)...
 Plotting Transformed KDE...
 Boxplot of Transformed Variables...
@@ -126,16 +135,40 @@ Min-Max Scaling Variables
 Comparision of Skewness and Kurtosis among variables...
 Original Variables Skewness...
 Skewness:
+Recency       0.887198
+Frequency    18.162730
+Monetary     25.070190
+dtype: float64
 Transformed Variables Skewness...
 Skewness:
+power_Recency    0.087316
+log_Frequency   -0.058030
+log_Monetary     0.188739
+dtype: float64
 Scaled Variables Skewness...
 Skewness:
+scaled_Recency     -0.248486
+scaled_Frequency   -0.058030
+scaled_Monetary     0.188739
+dtype: float64
 Original Variables Kurtosis...
 Kurtosis:
+Recency       -0.476970
+Frequency    523.518914
+Monetary     830.167745
+dtype: float64
 Transformed Variables Kurtosis...
 Kurtosis:
+power_Recency   -1.286121
+log_Frequency   -0.204255
+log_Monetary    -0.145086
+dtype: float64
 Scaled Variables Kurtosis...
 Kurtosis:
+scaled_Recency     -0.914912
+scaled_Frequency   -0.204255
+scaled_Monetary    -0.145086
+dtype: float64
 Plotting KDE of transformed variables...
 Mapping Scores to Segments...
 Converting Segments into dummy variables...
@@ -230,7 +263,6 @@ Cluster Label
 
 kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
 $
-
 # Check the skewness of data
 
 # Skewness is a statistical measure that describes the asymmetry of a probability distribution. 
