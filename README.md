@@ -233,7 +233,7 @@ The transformations and scaling have helped in reducing skewness, moving the dis
 
 The transformations (power and logarithmic) and scaling have generally resulted in distributions with lighter tails compared to the original variables. Negative kurtosis values suggest a distribution with fewer extreme values or outliers than a normal distribution. The kurtosis values are also within a reasonable range. Scaled_Recency and Scaled_Frequency both have negative kurtosis values, indicating slightly platykurtic distributions, but the magnitudes are not extreme. Scaled_Monetary has a positive kurtosis value, indicating a slightly leptokurtic distribution, but again, the magnitude is not highly pronounced.
 
-Now, we visualize the final density of the variables that we are going to use for KNN algorithm.
+Now, we visualize the final density of the variables that we are going to use for K means algorithm.
 
 ```bash
 Plotting KDE of transformed variables...
@@ -241,7 +241,7 @@ Plotting KDE of transformed variables...
 
 ![transformed_kde_2](https://github.com/kkharel/K-Means-Clustering/assets/59852121/b102e96f-a97a-4a87-80a5-dad325e69003)
 
-Now I will map the RFM scores to its segments to generate new features and to evaluate later on how well did the knn algorithm learned the structure and relationship of the data.
+Now I will map the RFM scores to its segments to generate new features and to evaluate later on how well did the k means algorithm learned the structure and relationship of the data.
 
 ```bash
 Mapping Scores to Segments...
@@ -256,7 +256,7 @@ Converting Segments into dummy variables...
 Most of the heavy lifting is done besides writing algorithm from the scratch. Above section loads the data, cleans the data, transforms the data and explores different visualizations. Now, we select the features manually that goes into the k means algorithm to cluster the segments.
 
 ```bash
-Selected features for KNN algorithm...
+Selected features for K-Means algorithm...
 ['Customer ID', 'scaled_RFM', 'bimodal_Recency', 'scaled_Recency', 'scaled_Frequency', 'scaled_Monetary', 'segment_A
 boutToSleep', 'segment_AtRisk', 'segment_CannotLoseThem', 'segment_Champions', 'segment_Hibernating', 'segment_Lost'
 , 'segment_LoyalCustomers', 'segment_NeedAttention', 'segment_PotentialLoyalist', 'segment_Promising', 'segment_Rece
