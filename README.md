@@ -1,21 +1,10 @@
-# K-Means-Clustering using RFM variables to Segment Customers
+# <p align="center">K-Means-Clustering using RFM variables to Segment Customers
 
+For this project, we will be exploring K means algorithm to segment customers based on RFM model. The dataset comes from UCI machine learning repository - Online Retail II dataset.
 
-
-bash: /c/Users/kkhar/conda.sh: No such file or directory
-
-kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Documents (master)
-$
-$ git push
-$ git commit -m"Final Result of the K Means Algorithm"
-$ git add .
-$ cd C:/Users/kkhar/OneDrive/Desktop/K-Means-Clustering
-
-kkhar@LAPTOP-R8I54N9C MINGW64 ~/OneDrive/Desktop/K-Means-Clustering (dev)
-$
-$ python
-$ python K-Means.py
-Loading Excel File...
+## Data Loading and Initial Cleaning and Exploration
+```bash
+$ Loading, Initial Exploration and Cleaning...Loading Excel File...
 Sheet Names: ['Year 2009-2010', 'Year 2010-2011']
 Number of Sheets: 2
 Cleaning Data...
@@ -108,6 +97,8 @@ min     12346.000000
 75%     16794.000000
 max     18287.000000
 std      1695.692775
+```
+
 Calculating Recency, Frequency, Monetary Values and Merging Data...
 Calculating RFM scores based on percentiles...
 Single RFM Metric...
@@ -427,5 +418,12 @@ $
 # However, it's crucial to strike a balance, as some diversity 
 # (like in Cluster 4) might be desirable for capturing a broader range of customer behaviors. 
 
+@misc{misc_online_retail_ii_502,
+  author       = {Chen,Daqing},
+  title        = {{Online Retail II}},
+  year         = {2019},
+  howpublished = {UCI Machine Learning Repository},
+  note         = {{DOI}: https://doi.org/10.24432/C5CG6D}
+}
 [Link to Plotly Plot](https://kkharel.github.io/K-Means-Clustering/index.html)
 
