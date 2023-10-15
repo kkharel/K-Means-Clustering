@@ -160,11 +160,13 @@ def plot_combined_distribution(data, columns, xlims=None):
 def check_skew(df, columns):
   skewness = df[columns].skew()
   print("Skewness: ")
+  print(skewness)
   return skewness
 
 def check_kurtosis(df, columns):
   kurtosis = df[columns].kurtosis()
   print("Kurtosis: ")
+  print(kurtosis)
   return kurtosis
 
 def power_transform(df, columns, power):
