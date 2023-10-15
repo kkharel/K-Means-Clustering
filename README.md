@@ -99,10 +99,20 @@ max     18287.000000
 std      1695.692775
 ```
 
+After cleaning the data, we calculate Recency, Frequency and Monetary values. For recency, we substract the most recent date in dataset with the last transaction date of the customer in the dataset. For frequency, we count how many times has the customer made the interaction with the business. For monetary, we sum all the spending that customer has done in our business.
+Once we get this information, we start assigning the R, F and M scores based on percentile model. See the model code on how we are using percentile to model the behavior of customers. Then we concatenate R,F and M scores to create a single RFM metric for segmentation. 
+
+```bash
 Calculating Recency, Frequency, Monetary Values and Merging Data...
 Calculating RFM scores based on percentiles...
 Single RFM Metric...
+```
+
+Now, we look at the distribution of Recency, Frequency and Monetary values of customers to visualize data distribution.
+```bash
 Plotting Data Distribution...
+```
+
 Checking Skewness and Kurtosis...
 Skewness:
 Kurtosis:
